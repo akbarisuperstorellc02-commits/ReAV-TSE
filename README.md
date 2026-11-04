@@ -318,3 +318,27 @@ If this project or code aids your research or development, please cite:
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## Windows Desktop Application
+
+The `feature/four-language-desktop` branch contains the Windows desktop packaging work for **ReAV-TSE**.
+
+- Windows 10/11 x64 desktop shell built with Electron.
+- React interface with English, Afghan Dari, Pashto, and Arabic language selection.
+- Right-to-left layout and bundled Noto Sans Arabic font for Dari, Pashto, and Arabic.
+- Python FastAPI backend packaged with PyInstaller.
+- FFmpeg executable supplied by the bundled `imageio-ffmpeg` package.
+- AV-MossFormer2 TSE checkpoint and ResNet-18 visual weights downloaded and included by the Windows CI build.
+- Uploaded videos, jobs, and generated WAV files are stored in the current Windows user's application data directory.
+
+### Build the Windows installer
+
+The GitHub Actions workflow `.github/workflows/windows-desktop.yml` builds the Windows x64 NSIS installer. It installs CPU PyTorch, packages the Python backend, downloads and verifies the pretrained checkpoints, builds the Vite frontend, and creates the Electron installer.
+
+The installer artifact is published by the workflow as **ReAV-TSE-Windows-Installer**. The bundled AI checkpoint is approximately 735 MB, so the final installer is expected to be large.
+
+### Desktop dependency set
+
+The desktop build uses `requirements-desktop.txt` and CPU-only PyTorch wheels. The original `requirements.txt` remains for the existing research/runtime environment.
+
+See [MODEL_NOTICES.md](MODEL_NOTICES.md) for model and bundled asset attribution.
