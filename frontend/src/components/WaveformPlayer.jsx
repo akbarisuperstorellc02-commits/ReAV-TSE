@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, Sparkles } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function WaveformPlayer({
   audioUrl,
@@ -9,6 +10,7 @@ export default function WaveformPlayer({
   onDownload,
   downloadFilename = "extracted_speaker.wav"
 }) {
+  const { t } = useLanguage();
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -106,10 +108,10 @@ export default function WaveformPlayer({
           <button
             onClick={onDownload}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface hover:bg-accent/20 text-neutral-300 hover:text-white border border-surface-border hover:border-accent/40 text-xs font-medium transition-all"
-            title="Download WAV File"
+            title={t("downloadWavTitle")}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download WAV</span>
+            <span>{t('downloadWavLabel')}</span>
           </button>
         )}
       </div>
@@ -176,7 +178,7 @@ export default function WaveformPlayer({
               }
             }}
             className="w-8 h-8 rounded-lg bg-surface hover:bg-surface-elevated text-neutral-400 hover:text-white flex items-center justify-center border border-surface-border transition-colors"
-            title="Replay from start"
+            title={t("replayStart")}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
