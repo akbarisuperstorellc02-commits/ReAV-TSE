@@ -6,6 +6,6 @@ opencv-python==4.10.0.84
 fastapi
 uvicorn
 python-multipart
-clearvoice==0.1.0
+clearvoice==0.1.2
 imageio-ffmpeg
 pyinstaller
