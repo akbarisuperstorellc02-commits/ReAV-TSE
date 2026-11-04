@@ -49,6 +49,27 @@ jobs:
         shell: pwsh
         run: |
           python -m PyInstaller --noconfirm --clean --onedir --name reav_backend --distpath backend/dist --workpath backend/build --add-data 'yunet.onnx;.' --collect-all clearvoice --collect-all torch --collect-all torchvision --collect-all cv2 --collect-all imageio_ffmpeg --hidden-import uvicorn.logging --hidden-import uvicorn.loops --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols --hidden-import uvicorn.protocols.http --hidden-import uvicorn.protocols.websockets --hidden-import uvicorn.lifespan --hidden-import uvicorn.lifespan.on --hidden-import multipart --hidden-import fastapi desktop_backend.py
+      - name: Smoke-test packaged FastAPI executable
+        shell: pwsh
+        run: |
+          $env:REAV_API_PORT = '8766'
+          $env:REAV_DATA_DIR = (Join-Path $env:RUNNER_TEMP 'reav-smoke-data')
+          $exe = Resolve-Path 'backend/dist/reav_backend/reav_backend.exe'
+          $process = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
+          try {
+            $healthy = $false
+            for ($i = 0; $i -lt 45; $i++) {
+              try {
+                $response = Invoke-RestMethod 'http://127.0.0.1:8766/api/health' -TimeoutSec 2
+                if ($response.status -eq 'ok') { $healthy = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            if (-not $healthy) { throw 'Packaged FastAPI backend did not pass its health check.' }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+          }
+
       - name: Install frontend and Electron dependencies
         working-directory: frontend
         run: npm install
