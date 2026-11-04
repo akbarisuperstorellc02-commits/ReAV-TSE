@@ -38,7 +38,7 @@ export default function AudioComparison({
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            Stacked View
+            {t('stackedView')}
           </button>
           <button
             onClick={() => setActiveTab('target')}
@@ -48,7 +48,7 @@ export default function AudioComparison({
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            Isolated Only
+            {t('isolatedOnly')}
           </button>
           <button
             onClick={() => setActiveTab('original')}
@@ -58,7 +58,7 @@ export default function AudioComparison({
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            Original Only
+            {t('originalOnly')}
           </button>
         </div>
       </div>
