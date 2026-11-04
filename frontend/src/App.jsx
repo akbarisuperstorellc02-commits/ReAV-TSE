@@ -53,7 +53,7 @@ export default function App() {
       .catch((err) => console.error("[Frontend] Initial job load error:", err));
   }, []);
 
-  const handleVideoSelected = async (fileOrSample) => {
+  const handleVideoSelected = async (selectedFile) => {
     // 1. Immediately clear old speaker state and cache
     setSpeakersData({ persons: [], tracks: [] });
     setSelectedPerson(null);
@@ -64,7 +64,7 @@ export default function App() {
     try {
       let uploadRes;
       const formData = new FormData();
-      formData.append('file', fileOrSample);
+      formData.append('file', selectedFile);
       const res = await fetch(apiUrl('/api/upload'), {
         method: 'POST',
         body: formData,
