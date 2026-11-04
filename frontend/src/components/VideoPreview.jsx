@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 import { Play, Pause, Volume2, VolumeX, Maximize2, RotateCcw } from 'lucide-react';
 
 export default function VideoPreview({ videoUrl, title = "Input Multi-Speaker Video", autoPlay = false }) {
+  const { t } = useLanguage();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -108,7 +110,7 @@ export default function VideoPreview({ videoUrl, title = "Input Multi-Speaker Vi
         <button
           onClick={togglePlay}
           className="text-neutral-300 hover:text-white transition-colors"
-          title={isPlaying ? "Pause" : "Play"}
+          title={isPlaying ? t("pause") : t("play")}
         >
           {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
         </button>
@@ -122,7 +124,7 @@ export default function VideoPreview({ videoUrl, title = "Input Multi-Speaker Vi
             }
           }}
           className="text-neutral-400 hover:text-white transition-colors"
-          title="Restart"
+          title={t("restart")}
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
@@ -145,7 +147,7 @@ export default function VideoPreview({ videoUrl, title = "Input Multi-Speaker Vi
         <button
           onClick={toggleMute}
           className="text-neutral-400 hover:text-white transition-colors"
-          title={isMuted ? "Unmute" : "Mute"}
+          title={isMuted ? t("unmute") : t("mute")}
         >
           {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
         </button>
@@ -153,7 +155,7 @@ export default function VideoPreview({ videoUrl, title = "Input Multi-Speaker Vi
         <button
           onClick={handleFullscreen}
           className="text-neutral-400 hover:text-white transition-colors"
-          title="Fullscreen"
+          title={t("fullscreen")}
         >
           <Maximize2 className="w-4 h-4" />
         </button>
