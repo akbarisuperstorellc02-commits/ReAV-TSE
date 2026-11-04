@@ -14,8 +14,8 @@ export default function ResultPanel({
 }) {
   const { t } = useLanguage();
   const targetClean = (selectedPerson?.id || "person1").toLowerCase();
-  const audioUrl = extractionData?.audioUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/target?person=${targetClean}`) : apiUrl('/api/audio/target'));
-  const downloadUrl = extractionData?.downloadUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : apiUrl('/api/audio/download'));
+  const audioUrl = (extractionData?.audioUrl ? apiUrl(extractionData.audioUrl) : null) || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/target?person=${targetClean}`) : apiUrl('/api/audio/target'));
+  const downloadUrl = (extractionData?.downloadUrl ? apiUrl(extractionData.downloadUrl) : null) || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : apiUrl('/api/audio/download'));
   const originalAudioUrl = jobId ? apiUrl(`/api/jobs/${jobId}/audio/original`) : apiUrl('/api/audio/original');
   const report = extractionData?.report;
 
