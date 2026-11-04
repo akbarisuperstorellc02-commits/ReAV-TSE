@@ -100,6 +100,11 @@ export function LanguageProvider({ children }) {
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
+export function localizeSpeakerTitle(title, t) {
+  const match = /^Person\\s+(\\d+)$/i.exec(title || '');
+  return match ? `${t('personLabel')} ${match[1]}` : title;
+}
+
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) throw new Error('useLanguage must be used inside LanguageProvider');
