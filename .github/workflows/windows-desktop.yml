@@ -1,0 +1,55 @@
+name: Windows Desktop Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/four-language-desktop
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements-desktop.txt
+      - name: Package Python backend
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onedir --name reav_backend --distpath backend/dist --workpath backend/build --add-data 'yunet.onnx;.' --collect-all clearvoice --collect-all torch --collect-all torchvision --collect-all cv2 --collect-all imageio_ffmpeg --hidden-import uvicorn.logging --hidden-import uvicorn.loops --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols --hidden-import uvicorn.protocols.http --hidden-import uvicorn.protocols.websockets --hidden-import uvicorn.lifespan --hidden-import uvicorn.lifespan.on --hidden-import multipart --hidden-import fastapi desktop_backend.py
+      - name: Install frontend and Electron dependencies
+        working-directory: frontend
+        run: npm install
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Build Windows installer
+        working-directory: frontend
+        run: npm run dist
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Windows-Installer
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14
