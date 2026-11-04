@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Clock, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../i18n/LanguageContext';
+import { apiUrl } from '../lib/api';
 
 export default function SpeakerCard({ person, isSelected, onSelect }) {
   const { t } = useLanguage();
@@ -27,7 +28,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
       {/* Face Image Frame */}
       <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-neutral-900 mb-3 border border-white/[0.06] group-hover:border-accent/40 transition-colors">
         <img
-          src={person.thumbnailUrl}
+          src={apiUrl(person.thumbnailUrl)}
           alt={person.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
