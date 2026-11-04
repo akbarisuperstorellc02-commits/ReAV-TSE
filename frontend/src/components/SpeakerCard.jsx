@@ -57,7 +57,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
 
         {person.role && (
           <p className="text-xs text-neutral-400 font-light truncate">
-            {person.role}
+            {`${t('detectedIn')} ${person.tracksCount} ${t('segmentsCount')}`}
           </p>
         )}
 
