@@ -79,7 +79,7 @@ export default function AudioComparison({
             <WaveformPlayer
               audioUrl={targetAudioUrl}
               title={`${t('cleanTargetVoice')}: ${speakerName}`}
-              subtitle="{t('preservedSilence')}"
+              subtitle={t('preservedSilence')}
               accentColor="violet"
             />
           </div>
