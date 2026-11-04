@@ -257,7 +257,7 @@ export default function App() {
 
                 {jobId && (
                   <span className="font-mono text-[11px] text-neutral-500">
-                    Session: {jobId}
+                    {t('session')}: {jobId}
                   </span>
                 )}
               </div>
