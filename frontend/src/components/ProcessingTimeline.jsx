@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Circle, Loader2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useLanguage } from '../i18n/LanguageContext';
+import { useLanguage, localizeSpeakerTitle } from '../i18n/LanguageContext';
 import { apiUrl } from '../lib/api';
 
 const PIPELINE_STAGES = [
@@ -17,6 +17,7 @@ const PIPELINE_STAGES = [
 
 export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, onComplete }) {
   const { t } = useLanguage();
+  const speakerTitle = localizeSpeakerTitle(selectedPerson?.title, t);
   const [currentStageId, setCurrentStageId] = useState('extracting_speech');
   const [statusMessage, setStatusMessage] = useState('');
   const [progress, setProgress] = useState(0.4);
@@ -68,12 +69,12 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent shadow-[0_0_35px_rgba(139,92,246,0.5)] p-0.5 bg-surface-elevated">
           <img
             src={apiUrl(selectedPerson?.thumbnailUrl || '')}
-            alt={selectedPerson?.title}
+            alt={speakerTitle}
             className="w-full h-full object-cover rounded-full"
           />
         </div>
         <div className="absolute -bottom-2 -right-1 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-mono text-white font-medium border border-white/20 shadow-md">
-          {selectedPerson?.title}
+          {speakerTitle}
         </div>
       </div>
 
