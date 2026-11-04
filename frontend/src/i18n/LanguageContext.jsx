@@ -101,7 +101,7 @@ export function LanguageProvider({ children }) {
 }
 
 export function localizeSpeakerTitle(title, t) {
-  const match = /^Person\\s+(\\d+)$/i.exec(title || '');
+  const match = /^Person\s+(\d+)$/i.exec(title || '');
   return match ? `${t('personLabel')} ${match[1]}` : title;
 }
 
