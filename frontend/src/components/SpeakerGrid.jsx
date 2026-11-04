@@ -103,8 +103,8 @@ export default function SpeakerGrid({
                   key={track.id}
                   onClick={() => onSelectPerson({
                     id: track.id,
-                    title: `Track ${track.trackNumber}`,
-                    role: `Raw Segment (${track.belongsTo})`,
+                    title: `${t('trackLabel')} ${track.trackNumber}`,
+                    role: `${t('rawSegment')} (${track.belongsTo})`,
                     detectedDuration: track.duration,
                     timeSpan: track.timeSpan,
                     tracksCount: 1,
@@ -119,7 +119,7 @@ export default function SpeakerGrid({
                 >
                   <img
                     src={track.thumbnailUrl}
-                    alt={`Track ${track.trackNumber}`}
+                    alt={`${t('trackLabel')} ${track.trackNumber}`}
                     className="w-full aspect-square object-cover rounded-lg mb-1.5"
                     loading="lazy"
                   />
@@ -139,14 +139,14 @@ export default function SpeakerGrid({
       <div className="pt-4 border-t border-surface-border flex items-center justify-between gap-3">
         <div className="text-xs text-neutral-400">
           {isAnalyzing ? (
-            <span className="text-neutral-500 font-mono text-[11px]">Analysis in progress...</span>
+            <span className="text-neutral-500 font-mono text-[11px]">{t('analysisInProgress')}</span>
           ) : selectedPerson ? (
             <span className="text-white flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
-              Target: <strong className="text-lavender-200">{selectedPerson.title}</strong> ({selectedPerson.detectedDuration}s)
+              {t('targetPrefix')} <strong className="text-lavender-200">{selectedPerson.title}</strong> ({selectedPerson.detectedDuration}s)
             </span>
           ) : (
-            <span>Please choose a target speaker above</span>
+            <span>{t('chooseSpeaker')}</span>
           )}
         </div>
 
@@ -160,7 +160,7 @@ export default function SpeakerGrid({
               : 'bg-surface-elevated text-neutral-500 border border-surface-border cursor-not-allowed'
           }`}
         >
-          <span>Extract this speaker</span>
+          <span>{t('extractThisSpeaker')}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
