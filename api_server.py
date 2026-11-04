@@ -22,7 +22,6 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-SAMPLE_VIDEO_PATH = BASE_DIR / "test_videos" / "test.mp4"
 
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
 
@@ -39,18 +38,8 @@ def health_check():
     return {"status": "ok", "service": "ReAV-TSE Multi-Job", "timestamp": time.time()}
 
 @app.post("/api/upload")
-async def upload_video(file: UploadFile = None, use_sample: bool = False):
-    """Generates unique job_id and initializes a clean, isolated job workspace."""
-    if use_sample:
-        if not SAMPLE_VIDEO_PATH.exists():
-            raise HTTPException(status_code=404, detail="Sample video not found on server")
-        job_id = create_job(SAMPLE_VIDEO_PATH, is_sample=True)
-        return {
-            "status": "uploaded",
-            "job_id": job_id,
-            "filename": "test.mp4",
-            "video_url": f"/api/jobs/{job_id}/video"
-        }
+async def upload_video(file: UploadFile = File(...)):
+    """Uploads a user-provided video into an isolated job workspace."""
 
     if not file or not file.filename:
         raise HTTPException(status_code=400, detail="No video file uploaded. Please select a video file.")
