@@ -64,7 +64,7 @@ async def upload_video(file: UploadFile = File(...)):
         temp_file.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail="The uploaded file is empty (0 bytes).")
 
-    job_id = create_job(temp_file, is_sample=False)
+    job_id = create_job(temp_file)
     return {
         "status": "uploaded",
         "job_id": job_id,
