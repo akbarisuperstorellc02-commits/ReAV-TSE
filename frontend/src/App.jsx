@@ -88,12 +88,14 @@ export default function App() {
         body: JSON.stringify({ job_id: newJobId }),
       });
       const analyzeData = await analyzeRes.json();
+      if (!analyzeRes.ok) throw new Error(analyzeData.detail || 'Video analysis failed');
       console.log(`[Frontend] /api/analyze completed:`, analyzeData);
 
       // 3. Fetch verified speaker grouping specifically for this CURRENT_JOB_ID
       console.log(`[Frontend] Fetching: /api/jobs/${newJobId}/speakers`);
       const speakersRes = await fetch(apiUrl(`/api/jobs/${newJobId}/speakers?t=${Date.now()}`));
       const speakersDataResponse = await speakersRes.json();
+      if (!speakersRes.ok) throw new Error(speakersDataResponse.detail || 'Could not load detected speakers');
       console.log(`[Frontend] /api/jobs/${newJobId}/speakers returned:`, speakersDataResponse);
       console.log(`[Frontend] Clustered persons count: ${speakersDataResponse.persons?.length || 0}`);
       console.log(`[Frontend] Raw tracks count: ${speakersDataResponse.tracks?.length || 0}`);
