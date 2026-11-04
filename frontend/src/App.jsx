@@ -99,8 +99,8 @@ export default function App() {
       console.log(`[Frontend] Raw tracks count: ${speakersDataResponse.tracks?.length || 0}`);
 
       setSpeakersData({
-        persons: speakersDataResponse.persons || [],
-        tracks: speakersDataResponse.tracks || [],
+        persons: (speakersDataResponse.persons || []).map(p => ({ ...p, thumbnailUrl: apiUrl(p.thumbnailUrl), galleryThumbnails: (p.galleryThumbnails || []).map(apiUrl) })),
+        tracks: (speakersDataResponse.tracks || []).map(t => ({ ...t, thumbnailUrl: apiUrl(t.thumbnailUrl) })),
       });
 
       if (speakersDataResponse.persons && speakersDataResponse.persons.length > 0) {
@@ -176,7 +176,7 @@ export default function App() {
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400 -mt-0.5 hidden sm:block">
-                Audio-Visual Target Speaker Extraction
+                {t('appSubtitle')}
               </p>
             </div>
           </div>
