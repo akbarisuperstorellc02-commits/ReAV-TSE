@@ -85,7 +85,7 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
           <span>{t('pipelineLabel')}</span>
         </div>
         <h2 className="text-3xl font-bold font-display text-white tracking-tight">
-          Extracting target speaker
+          {t('extractingTargetTitle')}
         </h2>
         <p className="text-xs text-neutral-400 mt-1 max-w-md font-mono">
           {statusMessage}
