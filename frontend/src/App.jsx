@@ -7,8 +7,10 @@ import VideoPreview from './components/VideoPreview';
 import SpeakerGrid from './components/SpeakerGrid';
 import ProcessingTimeline from './components/ProcessingTimeline';
 import ResultPanel from './components/ResultPanel';
+import { useLanguage, supportedLanguages } from './i18n/LanguageContext';
 
 export default function App() {
+  const { language, setLanguage, t } = useLanguage();
   // Navigation & Workflow Stage: 'upload' | 'selection' | 'processing' | 'results'
   const [currentStage, setCurrentStage] = useState('upload');
   const [jobId, setJobId] = useState(null);
@@ -183,7 +185,13 @@ export default function App() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex items-center gap-6 text-xs text-neutral-400">
+          <nav className="flex items-center gap-4 text-xs text-neutral-400">
+            <label className="flex items-center gap-2">
+              <span className="sr-only">{t('language')}</span>
+              <select aria-label={t('language')} value={language} onChange={(e) => setLanguage(e.target.value)} className="bg-surface-elevated border border-surface-border rounded-lg px-2 py-1.5 text-neutral-200 focus:outline-none focus:ring-1 focus:ring-accent">
+                {supportedLanguages.map((item) => <option key={item.code} value={item.code}>{item.native}</option>)}
+              </select>
+            </label>
             <button
               onClick={() => setCurrentStage('selection')}
               className={`transition-colors hover:text-white ${currentStage !== 'upload' ? 'text-white font-medium' : ''}`}
@@ -194,7 +202,7 @@ export default function App() {
               onClick={() => setShowHowItWorks(true)}
               className="transition-colors hover:text-white flex items-center gap-1"
             >
-              <span>How it works</span>
+              <span>{t('howItWorks')}</span>
               <HelpCircle className="w-3 h-3 text-neutral-500" />
             </button>
             <a
@@ -248,7 +256,7 @@ export default function App() {
                   className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors py-1 px-2 -ml-2 rounded-lg hover:bg-surface-elevated"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Upload different video</span>
+                  <span>{t('uploadDifferent')}</span>
                 </button>
 
                 {jobId && (
@@ -269,7 +277,7 @@ export default function App() {
                     />
                   ) : (
                     <div className="aspect-video rounded-2xl glass-panel flex items-center justify-center text-neutral-500 text-xs">
-                      Loading video player...
+                      {t('loadingVideo')}
                     </div>
                   )}
                   <div className="p-3.5 rounded-xl glass-panel border border-surface-border text-xs text-neutral-400 flex items-center justify-between">
@@ -278,7 +286,7 @@ export default function App() {
                       YuNet Face Detector & AV-MossFormer2
                     </span>
                     <span className="font-mono text-neutral-500">
-                      {isAnalyzing ? "Processing..." : `${speakersData.tracks?.length || 0} tracks active`}
+                      {isAnalyzing ? t("processing") : `${speakersData.tracks?.length || 0} tracks active`}
                     </span>
                   </div>
                 </div>
@@ -343,7 +351,7 @@ export default function App() {
       <footer className="w-full border-t border-surface-border py-4 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500 font-mono">
           <span>ReAV-TSE · Powered by ClearVoice AV-MossFormer2 & YuNet</span>
-          <span className="text-neutral-400">Multi-Job Dynamic Audio-Visual Separation</span>
+          <span className="text-neutral-400">{t('footerTagline')}</span>
         </div>
       </footer>
 
@@ -358,7 +366,7 @@ export default function App() {
             className="w-full max-w-lg glass-panel-elevated rounded-2xl p-6 border border-surface-border shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between pb-3 border-b border-surface-border">
-              <h3 className="text-lg font-bold font-display text-white">How ReAV-TSE Works</h3>
+              <h3 className="text-lg font-bold font-display text-white">{t("howTitle")}</h3>
               <button 
                 onClick={() => setShowHowItWorks(false)}
                 className="text-neutral-400 hover:text-white text-xs px-2 py-1 rounded bg-surface border border-surface-border"
