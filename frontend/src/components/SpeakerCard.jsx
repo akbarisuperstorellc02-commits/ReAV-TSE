@@ -1,8 +1,10 @@
 import React from 'react';
 import { Check, Clock, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function SpeakerCard({ person, isSelected, onSelect }) {
+  const { t } = useLanguage();
   return (
     <motion.div
       whileHover={{ y: -3, scale: 1.01 }}
@@ -34,7 +36,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
         {/* Duration Chip on Image */}
         <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-[11px] font-mono font-medium text-white flex items-center gap-1">
           <Clock className="w-3 h-3 text-lavender-400" />
-          <span>{person.detectedDuration}s speech</span>
+          <span>{person.detectedDuration}s {t('speech')}</span>
         </div>
 
         {/* Gradient shadow overlay */}
@@ -48,7 +50,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
             {person.title}
           </h3>
           <span className="text-[11px] font-mono text-neutral-500">
-            {person.tracksCount} {person.tracksCount === 1 ? 'segment' : 'segments'}
+            {person.tracksCount} {person.tracksCount === 1 ? t('segment') : t('segmentsCount')}
           </span>
         </div>
 
@@ -60,14 +62,14 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
 
         <div className="pt-2 flex items-center gap-2 text-[11px] text-neutral-500 font-mono">
           <Film className="w-3 h-3 text-neutral-400" />
-          <span>Span: {person.timeSpan}</span>
+          <span>{t('span')}: {person.timeSpan}</span>
         </div>
       </div>
 
       {/* Micro indicator */}
       <div className="mt-3 pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px]">
         <span className={isSelected ? 'text-accent font-medium' : 'text-neutral-500 group-hover:text-neutral-400'}>
-          {isSelected ? 'Target Selected' : 'Click to select'}
+          {isSelected ? t('targetSelected') : t('clickToSelect')}
         </span>
         <span className="font-mono text-[10px] text-neutral-600 uppercase">
           Tracks {person.trackIds.join(', ')}
