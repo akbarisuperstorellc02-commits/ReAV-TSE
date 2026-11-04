@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import WaveformPlayer from './WaveformPlayer';
 import AudioComparison from './AudioComparison';
 import { useLanguage } from '../i18n/LanguageContext';
+import { apiUrl } from '../lib/api';
 
 export default function ResultPanel({
   jobId,
@@ -13,9 +14,9 @@ export default function ResultPanel({
 }) {
   const { t } = useLanguage();
   const targetClean = (selectedPerson?.id || "person1").toLowerCase();
-  const audioUrl = extractionData?.audioUrl || (jobId ? `/api/jobs/${jobId}/audio/target?person=${targetClean}` : "/api/audio/target");
-  const downloadUrl = extractionData?.downloadUrl || (jobId ? `/api/jobs/${jobId}/audio/download?person=${targetClean}` : "/api/audio/download");
-  const originalAudioUrl = jobId ? `/api/jobs/${jobId}/audio/original` : "/api/audio/original";
+  const audioUrl = extractionData?.audioUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/target?person=${targetClean}`) : "/api/audio/target");
+  const downloadUrl = extractionData?.downloadUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : "/api/audio/download");
+  const originalAudioUrl = jobId ? apiUrl(`/api/jobs/${jobId}/audio/original`) : "/api/audio/original";
   const report = extractionData?.report;
 
   const handleDownload = () => {
@@ -60,7 +61,7 @@ export default function ResultPanel({
           {/* Large Avatar */}
           <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-accent p-0.5 bg-neutral-900 shadow-[0_0_25px_rgba(139,92,246,0.35)] shrink-0">
             <img
-              src={selectedPerson?.thumbnailUrl}
+              src={apiUrl(selectedPerson?.thumbnailUrl || '')}
               alt={selectedPerson?.title}
               className="w-full h-full object-cover rounded-xl"
             />
