@@ -1,11 +1,12 @@
 import React from 'react';
 import { Check, Clock, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useLanguage } from '../i18n/LanguageContext';
+import { useLanguage, localizeSpeakerTitle } from '../i18n/LanguageContext';
 import { apiUrl } from '../lib/api';
 
 export default function SpeakerCard({ person, isSelected, onSelect }) {
   const { t } = useLanguage();
+  const speakerTitle = localizeSpeakerTitle(person.title, t);
   return (
     <motion.div
       whileHover={{ y: -3, scale: 1.01 }}
@@ -29,7 +30,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
       <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-neutral-900 mb-3 border border-white/[0.06] group-hover:border-accent/40 transition-colors">
         <img
           src={apiUrl(person.thumbnailUrl)}
-          alt={person.title}
+          alt={speakerTitle}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
@@ -48,7 +49,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-white text-sm group-hover:text-lavender-200 transition-colors">
-            {person.title}
+            {speakerTitle}
           </h3>
           <span className="text-[11px] font-mono text-neutral-500">
             {person.tracksCount} {person.tracksCount === 1 ? t('segment') : t('segmentsCount')}
@@ -73,7 +74,7 @@ export default function SpeakerCard({ person, isSelected, onSelect }) {
           {isSelected ? t('targetSelected') : t('clickToSelect')}
         </span>
         <span className="font-mono text-[10px] text-neutral-600 uppercase">
-          Tracks {person.trackIds.join(', ')}
+          {t('tracksLabel')} {person.trackIds.join(', ')}
         </span>
       </div>
     </motion.div>
