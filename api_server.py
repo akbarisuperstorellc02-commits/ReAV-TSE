@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import shutil
+import uuid
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -56,7 +57,7 @@ async def upload_video(file: UploadFile = File(...)):
     # Temporary save
     temp_dir = DATA_DIR / "uploads"
     temp_dir.mkdir(parents=True, exist_ok=True)
-    temp_file = temp_dir / f"upload_{int(time.time())}_{file.filename}"
+    temp_file = temp_dir / f"upload_{uuid.uuid4().hex}{ext}"
     with open(temp_file, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
