@@ -108,7 +108,7 @@ export default function App() {
       }
     } catch (err) {
       console.error("[Frontend] Video processing error:", err);
-      alert("Failed to analyze video: " + err.message);
+      alert(t('uploadFailed') + err.message);
     } finally {
       setIsAnalyzing(false);
     }
@@ -142,7 +142,7 @@ export default function App() {
       })
       .catch((err) => {
         console.error("Extraction error:", err);
-        alert("Extraction failed: " + err.message);
+        alert(t('extractionFailed') + err.message);
         setCurrentStage('selection');
       });
   };
@@ -172,7 +172,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <span className="font-bold font-display tracking-tight text-white text-base">ReAV-TSE</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent-muted text-lavender-300 border border-accent/20">
-                  {jobId ? jobId.slice(0, 14) : "Multi-Job AI"}
+                  {jobId ? jobId.slice(0, 14) : t('multiJobAI')}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400 -mt-0.5 hidden sm:block">
@@ -269,7 +269,7 @@ export default function App() {
                   {videoUrl ? (
                     <VideoPreview
                       videoUrl={videoUrl}
-                      title={`Active Video (${jobId ? jobId.slice(0, 10) : 'Loaded'})`}
+                      title={`${t('activeVideo')} (${jobId ? jobId.slice(0, 10) : 'Loaded'})`}
                     />
                   ) : (
                     <div className="aspect-video rounded-2xl glass-panel flex items-center justify-center text-neutral-500 text-xs">
@@ -282,7 +282,7 @@ export default function App() {
                       YuNet Face Detector & AV-MossFormer2
                     </span>
                     <span className="font-mono text-neutral-500">
-                      {isAnalyzing ? t("processing") : `${speakersData.tracks?.length || 0} tracks active`}
+                      {isAnalyzing ? t("processing") : `${speakersData.tracks?.length || 0} ${t('tracksActiveLabel')}`}
                     </span>
                   </div>
                 </div>
@@ -373,16 +373,16 @@ export default function App() {
             
             <div className="space-y-3 text-xs text-neutral-300 leading-relaxed">
               <div className="p-3 rounded-xl bg-surface border border-surface-border">
-                <strong className="text-white block mb-1">1. Isolated Job Workspaces</strong>
-                Every uploaded video generates a unique job ID and directory, ensuring zero stale data leakage between videos.
+                <strong className="text-white block mb-1">1. {t('howStep1')}</strong>
+                {t('howStep1Desc')}
               </div>
               <div className="p-3 rounded-xl bg-surface border border-surface-border">
-                <strong className="text-white block mb-1">2. Visual Lip-Sync Tracking</strong>
-                YuNet and S3FD track face and mouth ROI across multi-speaker video shots at 25 fps.
+                <strong className="text-white block mb-1">2. {t('howStep2')}</strong>
+                {t('howStep2Desc')}
               </div>
               <div className="p-3 rounded-xl bg-surface border border-surface-border">
-                <strong className="text-white block mb-1">3. Target Speaker Extraction (TSE)</strong>
-                AV-MossFormer2 uses mouth movements as visual conditioning cues to isolate the target speaker's vocal harmonics from the audio mix.
+                <strong className="text-white block mb-1">3. {t('howStep3')}</strong>
+                {t('howStep3Desc')}
               </div>
             </div>
           </div>
