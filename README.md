@@ -290,7 +290,7 @@ bash configs/run_eval.sh
 | Method | Endpoint | Description |
 |:---|:---|:---|
 | `GET` | `/api/health` | Service health status and timestamp |
-| `POST` | `/api/upload` | Upload a new video file or load sample demo video |
+| `POST` | `/api/upload` | Upload a new user-provided video file |
 | `POST` | `/api/analyze` | Execute face detection, tracking, and speaker clustering |
 | `POST` | `/api/extract` | Run TSE extraction for a selected `person_id` or `track_id` |
 | `GET` | `/api/jobs/{job_id}/status` | Query current pipeline progress and logs |
