@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { UploadCloud, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function UploadZone({ onVideoSelected }) {
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = (e) => {
@@ -41,16 +43,16 @@ export default function UploadZone({ onVideoSelected }) {
       >
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-muted border border-accent/20 text-lavender-300 text-xs font-medium tracking-wide mb-6">
           <Sparkles className="w-3.5 h-3.5 text-accent" />
-          <span>Next-Gen Audio-Visual AI Separation</span>
+          <span>{t('uploadSubtitle')}</span>
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-display tracking-tight text-white mb-5 leading-[1.12]">
-          Extract any speaker.<br />
+          {t('uploadTitle')}<br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-100 via-lavender-200 to-accent">
-            Keep their voice.
+            {t('uploadSubtitle')}
           </span>
         </h1>
         <p className="text-neutral-400 text-lg max-w-2xl mx-auto font-light leading-relaxed">
-          Select a person from a multi-speaker video and isolate their speech cleanly using advanced lip-motion visual frontend and neural audio extraction.
+          {t('uploadDescription')}
         </p>
       </motion.div>
 
@@ -86,7 +88,7 @@ export default function UploadZone({ onVideoSelected }) {
 
           <div className="text-center space-y-2">
             <p className="text-lg font-medium text-white group-hover:text-lavender-200 transition-colors">
-              Drop your video here or <span className="text-accent underline underline-offset-4 decoration-accent/40">browse files</span>
+              {t('dropVideo')} <span className="text-accent underline underline-offset-4 decoration-accent/40">{t('browse')}</span>
             </p>
             <p className="text-xs uppercase tracking-widest text-neutral-500 font-mono">
               MP4 · MOV · AVI · MKV
