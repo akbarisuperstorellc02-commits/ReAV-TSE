@@ -21,7 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+DATA_DIR = Path(os.environ.get('REAV_DATA_DIR', str(Path.home() / 'ReAV-TSE')))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
 
@@ -52,7 +54,7 @@ async def upload_video(file: UploadFile = File(...)):
         )
 
     # Temporary save
-    temp_dir = BASE_DIR / "test_videos" / "temp"
+    temp_dir = DATA_DIR / "uploads"
     temp_dir.mkdir(parents=True, exist_ok=True)
     temp_file = temp_dir / f"upload_{int(time.time())}_{file.filename}"
     with open(temp_file, "wb") as buffer:
@@ -228,4 +230,4 @@ def get_legacy_original_audio():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api_server:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("api_server:app", host="127.0.0.1", port=int(os.environ.get("REAV_API_PORT", "8765")), reload=False)
