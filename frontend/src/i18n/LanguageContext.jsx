@@ -4,7 +4,7 @@ const dictionaries = {
   en: {
     language: 'Language', workspace: 'Workspace', howItWorks: 'How it works',
     uploadDifferent: 'Upload different video', loadingVideo: 'Loading video player...',
-    processing: 'Processing...', tracksActive: 'tracks active',
+    processing: 'Processing...', tracksActive: 'tracks active', tracksLabel: 'Tracks', personLabel: 'Person',
     close: 'Close', howTitle: 'How ReAV-TSE Works',
     uploadError: 'Failed to analyze video: ', extractionError: 'Extraction failed: ',
     footerTagline: 'Multi-Job Dynamic Audio-Visual Separation',
@@ -22,7 +22,7 @@ const dictionaries = {
   fa: {
     language: 'زبان', workspace: 'محیط کار', howItWorks: 'طرز کار برنامه',
     uploadDifferent: 'بارگذاری ویدیوی دیگر', loadingVideo: 'در حال بارگذاری پخش‌کننده ویدیو...',
-    processing: 'در حال پردازش...', tracksActive: 'مسیر فعال',
+    processing: 'در حال پردازش...', tracksActive: 'مسیر فعال', tracksLabel: 'مسیرها', personLabel: 'گوینده',
     close: 'بستن', howTitle: 'ReAV-TSE چگونه کار می‌کند؟',
     uploadError: 'تحلیل ویدیو ناموفق بود: ', extractionError: 'استخراج صدا ناموفق بود: ',
     footerTagline: 'جداسازی هوشمند صدا و تصویر با چندین وظیفه',
@@ -40,7 +40,7 @@ const dictionaries = {
   ps: {
     language: 'ژبه', workspace: 'کاري ځای', howItWorks: 'دا څنګه کار کوي',
     uploadDifferent: 'بله ویډیو پورته کړئ', loadingVideo: 'ویډیو چمتو کېږي...',
-    processing: 'پروسس روان دی...', tracksActive: 'فعالې برخې',
+    processing: 'پروسس روان دی...', tracksActive: 'فعالې برخې', tracksLabel: 'لارې', personLabel: 'ویونکی',
     close: 'بندول', howTitle: 'ReAV-TSE څنګه کار کوي؟',
     uploadError: 'د ویډیو تحلیل ناکام شو: ', extractionError: 'د غږ ایستل ناکام شول: ',
     footerTagline: 'د غږ او انځور هوښیار بېلول',
@@ -58,7 +58,7 @@ const dictionaries = {
   ar: {
     language: 'اللغة', workspace: 'مساحة العمل', howItWorks: 'كيف يعمل',
     uploadDifferent: 'تحميل فيديو آخر', loadingVideo: 'جارٍ تحميل مشغل الفيديو...',
-    processing: 'جارٍ المعالجة...', tracksActive: 'مسارات نشطة',
+    processing: 'جارٍ المعالجة...', tracksActive: 'مسارات نشطة', tracksLabel: 'المسارات', personLabel: 'المتحدث',
     close: 'إغلاق', howTitle: 'كيف يعمل ReAV-TSE؟',
     uploadError: 'فشل تحليل الفيديو: ', extractionError: 'فشل استخراج الصوت: ',
     footerTagline: 'فصل سمعي بصري ذكي متعدد المهام',
