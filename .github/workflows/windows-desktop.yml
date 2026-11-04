@@ -45,6 +45,8 @@ jobs:
           $model = 'backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K/last_best_checkpoint.pt'
           $sha = (Get-FileHash $model -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($sha -ne '0e60209aab0b31c38deea4ab116100acbbf3a07db8bc559f796f118da1a767d5') { throw "Unexpected AV-MossFormer2 checkpoint SHA256: $sha" }
+          $pointer = (Get-Content 'backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K/last_best_checkpoint' -Raw).Trim()
+          if ($pointer -ne 'last_best_checkpoint.pt') { throw "Unexpected AV-MossFormer2 checkpoint pointer: $pointer" }
           python -c "import torch; torch.hub.load_state_dict_from_url('https://download.pytorch.org/models/resnet18-f37072fd.pth', model_dir='backend/model_cache/torch_cache/hub/checkpoints', progress=True)"
       - name: Validate bundled pretrained model weights
         shell: pwsh
