@@ -8,6 +8,7 @@ import SpeakerGrid from './components/SpeakerGrid';
 import ProcessingTimeline from './components/ProcessingTimeline';
 import ResultPanel from './components/ResultPanel';
 import { useLanguage, supportedLanguages } from './i18n/LanguageContext';
+import { apiUrl } from './lib/api';
 
 export default function App() {
   const { language, setLanguage, t } = useLanguage();
@@ -23,24 +24,24 @@ export default function App() {
 
   useEffect(() => {
     // Restore latest active analyzed job if present
-    fetch('/api/jobs/latest')
+    fetch(apiUrl('/api/jobs/latest'))
       .then((res) => (res.ok ? res.json() : null))
       .then(async (data) => {
         if (data?.job_id) {
           console.log(`[Frontend] Found latest job_id: ${data.job_id}`);
           setJobId(data.job_id);
-          setVideoUrl(data.video_url);
+          setVideoUrl(apiUrl(data.video_url));
 
           // Fetch fresh speakers directly from /api/jobs/{CURRENT_JOB_ID}/speakers
           console.log(`[Frontend] Fetching /api/jobs/${data.job_id}/speakers`);
-          const spRes = await fetch(`/api/jobs/${data.job_id}/speakers?t=${Date.now()}`);
+          const spRes = await fetch(apiUrl(`/api/jobs/${data.job_id}/speakers?t=${Date.now()}`));
           if (spRes.ok) {
             const spData = await spRes.json();
             console.log(`[Frontend] /api/jobs/${data.job_id}/speakers response:`, spData);
             console.log(`[Frontend] Loaded ${spData.persons?.length || 0} persons, ${spData.tracks?.length || 0} raw tracks`);
             setSpeakersData({
-              persons: spData.persons || [],
-              tracks: spData.tracks || []
+              persons: (spData.persons || []).map(p => ({ ...p, thumbnailUrl: apiUrl(p.thumbnailUrl), galleryThumbnails: (p.galleryThumbnails || []).map(apiUrl) })),
+              tracks: (spData.tracks || []).map(t => ({ ...t, thumbnailUrl: apiUrl(t.thumbnailUrl) }))
             });
             if (spData.persons?.length > 0) {
               setSelectedPerson(spData.persons[0]);
@@ -64,7 +65,7 @@ export default function App() {
       let uploadRes;
       const formData = new FormData();
       formData.append('file', fileOrSample);
-      const res = await fetch('/api/upload', {
+      const res = await fetch(apiUrl('/api/upload'), {
         method: 'POST',
         body: formData,
       });
@@ -77,11 +78,11 @@ export default function App() {
       const newJobId = uploadRes.job_id;
       console.log(`[Frontend] Upload succeeded! Current job_id: ${newJobId}`);
       setJobId(newJobId);
-      setVideoUrl(uploadRes.video_url);
+      setVideoUrl(apiUrl(uploadRes.video_url));
 
       // 2. Trigger fresh video analysis for this specific job
       console.log(`[Frontend] Triggering /api/analyze for job: ${newJobId}`);
-      const analyzeRes = await fetch('/api/analyze', {
+      const analyzeRes = await fetch(apiUrl('/api/analyze'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job_id: newJobId }),
@@ -91,7 +92,7 @@ export default function App() {
 
       // 3. Fetch verified speaker grouping specifically for this CURRENT_JOB_ID
       console.log(`[Frontend] Fetching: /api/jobs/${newJobId}/speakers`);
-      const speakersRes = await fetch(`/api/jobs/${newJobId}/speakers?t=${Date.now()}`);
+      const speakersRes = await fetch(apiUrl(`/api/jobs/${newJobId}/speakers?t=${Date.now()}`));
       const speakersDataResponse = await speakersRes.json();
       console.log(`[Frontend] /api/jobs/${newJobId}/speakers returned:`, speakersDataResponse);
       console.log(`[Frontend] Clustered persons count: ${speakersDataResponse.persons?.length || 0}`);
@@ -119,7 +120,7 @@ export default function App() {
     setExtractionResult(null);
 
     // Trigger backend extraction API specifically for this job and selected person
-    fetch('/api/extract', {
+    fetch(apiUrl('/api/extract'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
