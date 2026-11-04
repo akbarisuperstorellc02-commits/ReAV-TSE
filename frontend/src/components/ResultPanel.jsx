@@ -100,7 +100,7 @@ export default function ResultPanel({
           <div className="px-3.5 py-2 rounded-xl bg-surface border border-surface-border text-center">
             <div className="text-[10px] uppercase font-mono text-neutral-400">{t('totalTimeline')}</div>
             <div className="text-base font-semibold text-neutral-300 font-mono">
-              {report?.total_timeline_duration_sec || 22.73}s
+              {report?.total_timeline_duration_sec ?? 0}s
             </div>
           </div>
 
