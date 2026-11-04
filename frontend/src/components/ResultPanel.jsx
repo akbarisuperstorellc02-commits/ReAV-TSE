@@ -3,7 +3,7 @@ import { Download, RotateCcw, CheckCircle2, Sparkles, Layers, Clock, Volume2 } f
 import { motion } from 'framer-motion';
 import WaveformPlayer from './WaveformPlayer';
 import AudioComparison from './AudioComparison';
-import { useLanguage } from '../i18n/LanguageContext';
+import { useLanguage, localizeSpeakerTitle } from '../i18n/LanguageContext';
 import { apiUrl } from '../lib/api';
 
 export default function ResultPanel({
@@ -13,6 +13,7 @@ export default function ResultPanel({
   onReset
 }) {
   const { t } = useLanguage();
+  const speakerTitle = localizeSpeakerTitle(selectedPerson?.title, t);
   const targetClean = (selectedPerson?.id || "person1").toLowerCase();
   const audioUrl = (extractionData?.audioUrl ? apiUrl(extractionData.audioUrl) : null) || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/target?person=${targetClean}`) : apiUrl('/api/audio/target'));
   const downloadUrl = (extractionData?.downloadUrl ? apiUrl(extractionData.downloadUrl) : null) || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : apiUrl('/api/audio/download'));
@@ -62,7 +63,7 @@ export default function ResultPanel({
           <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-accent p-0.5 bg-neutral-900 shadow-[0_0_25px_rgba(139,92,246,0.35)] shrink-0">
             <img
               src={apiUrl(selectedPerson?.thumbnailUrl || '')}
-              alt={selectedPerson?.title}
+              alt={speakerTitle}
               className="w-full h-full object-cover rounded-xl"
             />
           </div>
@@ -73,7 +74,7 @@ export default function ResultPanel({
               <span>{t('targetSpeakerLabel')}</span>
             </div>
             <h2 className="text-2xl font-bold font-display text-white tracking-tight">
-              {selectedPerson?.title}
+              {speakerTitle}
             </h2>
             <p className="text-xs text-neutral-400">
               {`${t('detectedIn')} ${selectedPerson?.tracksCount || 0} ${t('segmentsCount')}`}
@@ -123,7 +124,7 @@ export default function ResultPanel({
       >
         <WaveformPlayer
           audioUrl={audioUrl}
-          title={`${t('isolatedTrack')}: ${selectedPerson?.title}`}
+          title={`${t('isolatedTrack')}: ${speakerTitle}`}
           subtitle={t('timelineSubtitle')}
           onDownload={handleDownload}
         />
@@ -138,7 +139,7 @@ export default function ResultPanel({
         <AudioComparison
           originalAudioUrl={originalAudioUrl}
           targetAudioUrl={audioUrl}
-          speakerName={selectedPerson?.title}
+          speakerName={speakerTitle}
         />
       </motion.div>
 
