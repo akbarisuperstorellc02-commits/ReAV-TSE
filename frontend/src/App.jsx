@@ -193,7 +193,7 @@ export default function App() {
               onClick={() => setCurrentStage('selection')}
               className={`transition-colors hover:text-white ${currentStage !== 'upload' ? 'text-white font-medium' : ''}`}
             >
-              Workspace
+              {t('workspace')}
             </button>
             <button
               onClick={() => setShowHowItWorks(true)}
@@ -346,7 +346,7 @@ export default function App() {
       {/* Footer */}
       <footer className="w-full border-t border-surface-border py-4 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500 font-mono">
-          <span>ReAV-TSE · Powered by ClearVoice AV-MossFormer2 & YuNet</span>
+          <span>ReAV-TSE · {t('poweredBy')}</span>
           <span className="text-neutral-400">{t('footerTagline')}</span>
         </div>
       </footer>
@@ -367,7 +367,7 @@ export default function App() {
                 onClick={() => setShowHowItWorks(false)}
                 className="text-neutral-400 hover:text-white text-xs px-2 py-1 rounded bg-surface border border-surface-border"
               >
-                Close
+                {t('close')}
               </button>
             </div>
             
