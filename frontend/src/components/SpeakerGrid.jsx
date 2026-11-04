@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Users, Layers, Sparkles, Loader2 } from 'lucide-react';
 import SpeakerCard from './SpeakerCard';
-import { useLanguage } from '../i18n/LanguageContext';
+import { useLanguage, localizeSpeakerTitle } from '../i18n/LanguageContext';
 
 export default function SpeakerGrid({
   persons = [],
@@ -13,6 +13,7 @@ export default function SpeakerGrid({
   isAnalyzing = false
 }) {
   const { t } = useLanguage();
+  const selectedSpeakerTitle = localizeSpeakerTitle(selectedPerson?.title, t);
   const [viewMode, setViewMode] = useState('grouped'); // 'grouped' or 'tracks'
 
   return (
@@ -143,7 +144,7 @@ export default function SpeakerGrid({
           ) : selectedPerson ? (
             <span className="text-white flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
-              {t('targetPrefix')} <strong className="text-lavender-200">{selectedPerson.title}</strong> ({selectedPerson.detectedDuration}s)
+              {t('targetPrefix')} <strong className="text-lavender-200">{selectedSpeakerTitle}</strong> ({selectedPerson.detectedDuration}s)
             </span>
           ) : (
             <span>{t('chooseSpeaker')}</span>
