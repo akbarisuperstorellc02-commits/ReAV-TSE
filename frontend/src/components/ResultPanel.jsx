@@ -76,7 +76,7 @@ export default function ResultPanel({
               {selectedPerson?.title}
             </h2>
             <p className="text-xs text-neutral-400">
-              {selectedPerson?.role || t('extractedFrom')}
+              {`${t('detectedIn')} ${selectedPerson?.tracksCount || 0} ${t('segmentsCount')}`}
             </p>
           </div>
         </div>
@@ -123,8 +123,8 @@ export default function ResultPanel({
       >
         <WaveformPlayer
           audioUrl={audioUrl}
-          title={`Isolated Vocal Track: ${selectedPerson?.title}`}
-          subtitle="Continuous 22.7s timeline with non-target speech muted"
+          title={`${t('isolatedTrack')}: ${selectedPerson?.title}`}
+          subtitle={t('timelineSubtitle')}
           onDownload={handleDownload}
         />
       </motion.div>
