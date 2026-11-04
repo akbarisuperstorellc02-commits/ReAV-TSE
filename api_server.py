@@ -16,8 +16,8 @@ app = FastAPI(title="ReAV-TSE Multi-Job API", description="Dynamic Audio-Visual 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["null", "http://127.0.0.1:5173", "http://localhost:5173"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
