@@ -159,6 +159,7 @@ export default function WaveformPlayer({
         {/* Left: Playback controls */}
         <div className="flex items-center gap-3">
           <button
+            aria-label={isPlaying ? t('pause') : t('play')}
             onClick={togglePlay}
             className="w-11 h-11 rounded-full bg-accent hover:bg-accent-hover text-white flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.35)] transition-all cursor-pointer transform hover:scale-105 active:scale-95"
           >
@@ -170,6 +171,7 @@ export default function WaveformPlayer({
           </button>
 
           <button
+            aria-label={t('restart')}
             onClick={() => {
               if (audioRef.current) {
                 audioRef.current.currentTime = 0;
@@ -192,7 +194,7 @@ export default function WaveformPlayer({
 
         {/* Right: Volume slider */}
         <div className="flex items-center gap-2 text-neutral-400">
-          <button onClick={toggleMute} className="hover:text-white transition-colors">
+          <button onClick={toggleMute} aria-label={isMuted || volume === 0 ? t("unmute") : t("mute")} className="hover:text-white transition-colors">
             {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
           <input
