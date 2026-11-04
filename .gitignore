@@ -120,3 +120,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+# Large model and installer build caches
+backend/model_cache/
+backend/dist/
+backend/build/
+release/
