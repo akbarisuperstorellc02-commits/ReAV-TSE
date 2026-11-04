@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, Circle, Loader2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../i18n/LanguageContext';
+import { apiUrl } from '../lib/api';
 
 const PIPELINE_STAGES = [
   { id: 'uploading', title: 'uploaded', desc: 'decodeFrames' },
@@ -25,7 +26,7 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/jobs/${jobId}/status`);
+        const res = await fetch(apiUrl(`/api/jobs/${jobId}/status`));
         if (res.ok) {
           const data = await res.json();
           if (data.stage) {
@@ -66,7 +67,7 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
         />
         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent shadow-[0_0_35px_rgba(139,92,246,0.5)] p-0.5 bg-surface-elevated">
           <img
-            src={selectedPerson?.thumbnailUrl}
+            src={apiUrl(selectedPerson?.thumbnailUrl || '')}
             alt={selectedPerson?.title}
             className="w-full h-full object-cover rounded-full"
           />
