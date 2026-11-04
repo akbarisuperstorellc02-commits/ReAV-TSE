@@ -30,11 +30,12 @@ async function waitForBackend() {
 function startBackend() {
   const exe = path.join(process.resourcesPath, 'backend', 'reav_backend.exe');
   backend = spawn(exe, [], {
-    cwd: app.getPath('userData'),
+    cwd: process.resourcesPath,
     env: {
       ...process.env,
       REAV_API_PORT: String(API_PORT),
-      REAV_DATA_DIR: path.join(app.getPath('userData'), 'data')
+      REAV_DATA_DIR: path.join(app.getPath('userData'), 'data'),
+      TORCH_HOME: path.join(process.resourcesPath, 'torch_cache')
     },
     windowsHide: true,
     stdio: 'ignore'
