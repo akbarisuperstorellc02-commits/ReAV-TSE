@@ -14,9 +14,9 @@ export default function ResultPanel({
 }) {
   const { t } = useLanguage();
   const targetClean = (selectedPerson?.id || "person1").toLowerCase();
-  const audioUrl = extractionData?.audioUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/target?person=${targetClean}`) : "/api/audio/target");
-  const downloadUrl = extractionData?.downloadUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : "/api/audio/download");
-  const originalAudioUrl = jobId ? apiUrl(`/api/jobs/${jobId}/audio/original`) : "/api/audio/original";
+  const audioUrl = extractionData?.audioUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/target?person=${targetClean}`) : apiUrl('/api/audio/target'));
+  const downloadUrl = extractionData?.downloadUrl || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : apiUrl('/api/audio/download'));
+  const originalAudioUrl = jobId ? apiUrl(`/api/jobs/${jobId}/audio/original`) : apiUrl('/api/audio/original');
   const report = extractionData?.report;
 
   const handleDownload = () => {
@@ -33,7 +33,7 @@ export default function ResultPanel({
           </div>
           <div>
             <h1 className="text-2xl font-bold font-display text-white tracking-tight">
-              {t('resultTitle')}
+              {t('resultTitle')
             </h1>
             <p className="text-xs text-neutral-400">
               {t('resultSubtitle')}
@@ -76,7 +76,7 @@ export default function ResultPanel({
               {selectedPerson?.title}
             </h2>
             <p className="text-xs text-neutral-400">
-              {selectedPerson?.role || "{t('extractedFrom')}"}
+              {selectedPerson?.role || t('extractedFrom')}"}
             </p>
           </div>
         </div>
