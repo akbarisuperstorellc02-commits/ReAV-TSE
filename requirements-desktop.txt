@@ -1,5 +1,5 @@
 # Desktop runtime dependencies. Install CPU PyTorch separately in the Windows build workflow.
-numpy==1.23.5
+numpy==1.26.4
 soundfile==0.12.1
 scipy==1.13.1
 opencv-python==4.10.0.84
