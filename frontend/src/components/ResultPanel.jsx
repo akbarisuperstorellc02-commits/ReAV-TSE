@@ -33,7 +33,7 @@ export default function ResultPanel({
           </div>
           <div>
             <h1 className="text-2xl font-bold font-display text-white tracking-tight">
-              {t('resultTitle')
+              {t('resultTitle')}
             </h1>
             <p className="text-xs text-neutral-400">
               {t('resultSubtitle')}
@@ -76,7 +76,7 @@ export default function ResultPanel({
               {selectedPerson?.title}
             </h2>
             <p className="text-xs text-neutral-400">
-              {selectedPerson?.role || t('extractedFrom')}"}
+              {selectedPerson?.role || t('extractedFrom')}
             </p>
           </div>
         </div>
