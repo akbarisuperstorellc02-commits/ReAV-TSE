@@ -271,7 +271,7 @@ export default function App() {
                   {videoUrl ? (
                     <VideoPreview
                       videoUrl={videoUrl}
-                      title={`${t('activeVideo')} (${jobId ? jobId.slice(0, 10) : 'Loaded'})`}
+                      title={`${t('activeVideo')} (${jobId ? jobId.slice(0, 10)  : t('loaded')})`}
                     />
                   ) : (
                     <div className="aspect-video rounded-2xl glass-panel flex items-center justify-center text-neutral-500 text-xs">
@@ -281,7 +281,7 @@ export default function App() {
                   <div className="p-3.5 rounded-xl glass-panel border border-surface-border text-xs text-neutral-400 flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-neutral-300">
                       <Cpu className="w-3.5 h-3.5 text-accent" />
-                      YuNet Face Detector & AV-MossFormer2
+                      {t('engineLabel')}
                     </span>
                     <span className="font-mono text-neutral-500">
                       {isAnalyzing ? t("processing") : `${speakersData.tracks?.length || 0} ${t('tracksActiveLabel')}`}
