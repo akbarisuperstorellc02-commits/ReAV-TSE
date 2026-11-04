@@ -44,6 +44,14 @@
       {
         "from": "../backend/dist/reav_backend",
         "to": "backend"
+      },
+      {
+        "from": "../backend/model_cache/checkpoints",
+        "to": "checkpoints"
+      },
+      {
+        "from": "../backend/model_cache/torch_cache",
+        "to": "torch_cache"
       }
     ],
     "win": {
