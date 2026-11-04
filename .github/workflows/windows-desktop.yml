@@ -45,6 +45,13 @@ jobs:
           $sha = (Get-FileHash $model -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($sha -ne '0e60209aab0b31c38deea4ab116100acbbf3a07db8bc559f796f118da1a767d5') { throw "Unexpected AV-MossFormer2 checkpoint SHA256: $sha" }
           python -c "import torch; torch.hub.load_state_dict_from_url('https://download.pytorch.org/models/resnet18-f37072fd.pth', model_dir='backend/model_cache/torch_cache/hub/checkpoints', progress=True)"
+      - name: Validate bundled pretrained model weights
+        shell: pwsh
+        run: |
+          $env:TORCH_HOME = (Resolve-Path 'backend/model_cache/torch_cache').Path
+          $env:REAV_DATA_DIR = (Join-Path $env:RUNNER_TEMP 'reav-model-validation')
+          python -c "import os,sys; sys.path.insert(0, os.path.abspath('.')); os.chdir('backend/model_cache'); from job_pipeline import get_resnet_embedder, get_clearvoice_model; get_resnet_embedder(); model,args=get_clearvoice_model(); print('RESNET_AND_AV_MOSSFORMER2_MODEL_LOAD_OK', type(model).__name__, args.device)"
+
       - name: Package Python backend
         shell: pwsh
         run: |
