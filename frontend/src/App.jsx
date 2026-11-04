@@ -19,7 +19,6 @@ export default function App() {
   const [speakersData, setSpeakersData] = useState({ persons: [], tracks: [] });
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [extractionResult, setExtractionResult] = useState(null);
-  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   useEffect(() => {
@@ -63,20 +62,17 @@ export default function App() {
 
     try {
       let uploadRes;
-      if (fileOrSample === 'sample') {
-        setIsLoadingDemo(true);
-        const res = await fetch('/api/upload?use_sample=true', { method: 'POST' });
-        uploadRes = await res.json();
-        setIsLoadingDemo(false);
-      } else {
-        const formData = new FormData();
-        formData.append('file', fileOrSample);
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        uploadRes = await res.json();
+      const formData = new FormData();
+      formData.append('file', fileOrSample);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Video upload failed');
       }
+      uploadRes = await res.json();
 
       const newJobId = uploadRes.job_id;
       console.log(`[Frontend] Upload succeeded! Current job_id: ${newJobId}`);
@@ -234,7 +230,6 @@ export default function App() {
             >
               <UploadZone
                 onVideoSelected={handleVideoSelected}
-                isLoadingDemo={isLoadingDemo}
               />
             </motion.div>
           )}
