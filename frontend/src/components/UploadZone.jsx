@@ -97,13 +97,13 @@ export default function UploadZone({ onVideoSelected }) {
 
           <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-wrap items-center justify-center gap-6 text-xs text-neutral-400">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> AV-MossFormer2 16K Engine
+              <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> {t('engineFeature')}
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> YuNet Lip & Face Tracking
+              <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> {t('faceFeature')}
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Timeline Reconstruction
+              <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> {t('timelineFeature')}
             </span>
           </div>
         </label>
