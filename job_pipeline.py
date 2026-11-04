@@ -128,9 +128,8 @@ def extract_audio_from_video(video_path: Path, audio_path: Path):
     import imageio_ffmpeg
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     cmd = [
-        ffmpeg_exe, "-y", "-i", str(video_path),
-        "-vn", "-ac", "1", "-ar", "16000",
-        str(audio_path), "-loglevel", "error"
+        ffmpeg_exe, "-hide_banner", "-loglevel", "error", "-y", "-i", str(video_path),
+        "-vn", "-ac", "1", "-ar", "16000", str(audio_path)
     ]
     subprocess.run(cmd, check=True)
 
