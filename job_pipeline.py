@@ -50,8 +50,10 @@ try:
 except RuntimeError:
     pass
 
-BASE_DIR = Path(__file__).resolve().parent
-JOBS_DIR = BASE_DIR / "outputs_clearvoice" / "jobs"
+BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+DATA_DIR = Path(os.environ.get('REAV_DATA_DIR', str(Path.home() / 'ReAV-TSE')))
+JOBS_DIR = DATA_DIR / 'jobs'
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
 YUNET_PATH = str(BASE_DIR / "yunet.onnx")
 
 # Global models
@@ -109,7 +111,7 @@ def update_job_status(job_id: str, stage: str, message: str, progress: float):
     with open(status_file, "w") as f:
         json.dump(status_data, f, indent=2)
 
-def create_job(video_path: Path, is_sample: bool = False) -> str:
+def create_job(video_path: Path) -> str:
     job_id = f"job_{int(time.time())}_{uuid.uuid4().hex[:6]}"
     job_dir = JOBS_DIR / job_id
     job_dir.mkdir(parents=True, exist_ok=True)
@@ -123,8 +125,10 @@ def create_job(video_path: Path, is_sample: bool = False) -> str:
     return job_id
 
 def extract_audio_from_video(video_path: Path, audio_path: Path):
+    import imageio_ffmpeg
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     cmd = [
-        "ffmpeg", "-y", "-i", str(video_path),
+        ffmpeg_exe, "-y", "-i", str(video_path),
         "-vn", "-ac", "1", "-ar", "16000",
         str(audio_path), "-loglevel", "error"
     ]
