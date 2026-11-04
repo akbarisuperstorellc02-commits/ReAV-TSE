@@ -41,6 +41,7 @@ jobs:
           New-Item -ItemType Directory -Force backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K | Out-Null
           New-Item -ItemType Directory -Force backend/model_cache/torch_cache/hub/checkpoints | Out-Null
           python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='alibabasglab/AV_MossFormer2_TSE_16K', filename='last_best_checkpoint.pt', local_dir='backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K')"
+          python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='alibabasglab/AV_MossFormer2_TSE_16K', filename='last_best_checkpoint', local_dir='backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K')"
           $model = 'backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K/last_best_checkpoint.pt'
           $sha = (Get-FileHash $model -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($sha -ne '0e60209aab0b31c38deea4ab116100acbbf3a07db8bc559f796f118da1a767d5') { throw "Unexpected AV-MossFormer2 checkpoint SHA256: $sha" }
