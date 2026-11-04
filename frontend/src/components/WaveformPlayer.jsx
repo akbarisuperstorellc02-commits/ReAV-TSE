@@ -98,7 +98,7 @@ export default function WaveformPlayer({
           <h3 className="text-base font-semibold text-white tracking-tight flex items-center gap-2">
             <span>{title}</span>
             <span className="px-2 py-0.5 rounded-full bg-accent-muted border border-accent/20 text-lavender-300 text-[10px] font-mono uppercase">
-              16kHz Mono WAV
+              {t('audioFormat')}
             </span>
           </h3>
           <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>
