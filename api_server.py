@@ -229,6 +229,89 @@ def get_legacy_original_audio():
         raise HTTPException(status_code=404, detail="No active jobs found")
     return get_job_original_audio(latest["job_id"])
 
+
+# Audio-only workflow (offline SepFormer model bundled by the Windows workflow)
+AUDIO_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".aac"}
+_AUDIO_MODEL = None
+
+def _get_audio_separator():
+    global _AUDIO_MODEL
+    if _AUDIO_MODEL is None:
+        model_dir = Path(os.environ.get("REAV_AUDIO_MODEL_DIR", str(BASE_DIR / "audio_models" / "sepformer-wsj02mix")))
+        if not model_dir.exists():
+            raise RuntimeError("The offline audio separation model is missing. Reinstall the complete model bundle.")
+        from speechbrain.inference.separation import SepformerSeparation
+        _AUDIO_MODEL = SepformerSeparation.from_hparams(
+            source=str(model_dir), savedir=str(model_dir),
+            run_opts={"device": "cuda" if __import__("torch").cuda.is_available() else "cpu"}
+        )
+    return _AUDIO_MODEL
+
+@app.post("/api/audio/upload")
+async def upload_audio(file: UploadFile = File(...)):
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="Select an audio file.")
+    ext = Path(file.filename).suffix.lower()
+    if ext not in AUDIO_EXTS:
+        raise HTTPException(status_code=400, detail="Supported audio formats: WAV, MP3, M4A, FLAC, OGG and AAC.")
+    audio_dir = DATA_DIR / "audio_jobs" / uuid.uuid4().hex
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    source = audio_dir / ("source" + ext)
+    with open(source, "wb") as dst:
+        shutil.copyfileobj(file.file, dst)
+    if source.stat().st_size == 0:
+        shutil.rmtree(audio_dir, ignore_errors=True)
+        raise HTTPException(status_code=400, detail="The selected audio file is empty.")
+    return {"job_id": audio_dir.name, "filename": file.filename, "status": "uploaded"}
+
+@app.post("/api/audio/separate")
+def separate_audio(req: AnalyzeRequest):
+    job_dir = DATA_DIR / "audio_jobs" / req.job_id
+    if not job_dir.exists():
+        raise HTTPException(status_code=404, detail="Audio job not found.")
+    source_files = [p for p in job_dir.iterdir() if p.is_file() and p.name.startswith("source.")]
+    if not source_files:
+        raise HTTPException(status_code=404, detail="Uploaded audio file not found.")
+    try:
+        import imageio_ffmpeg
+        import numpy as np
+        import soundfile as sf
+        source = source_files[0]
+        normalized = job_dir / "normalized_8k.wav"
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        import subprocess
+        subprocess.run([ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
+                        "-vn", "-ac", "1", "-ar", "8000", str(normalized)], check=True)
+        separator = _get_audio_separator()
+        estimates = separator.separate_file(path=str(normalized))
+        stems = []
+        data = estimates.detach().cpu().numpy()
+        # SpeechBrain SepFormer WSJ02Mix is a two-source model; do not imply
+        # support for arbitrary speaker counts or stable speaker identity.
+        if data.ndim == 3:
+            data = data[0]
+        if data.ndim != 2 or data.shape[-1] != 2:
+            raise RuntimeError("The bundled separator returned an unexpected output shape.")
+        for idx in range(2):
+            out = job_dir / f"speaker_{idx + 1}.wav"
+            sf.write(str(out), data[:, idx], 8000)
+            stems.append({"speaker": idx + 1, "downloadUrl": f"/api/audio/jobs/{req.job_id}/speaker/{idx + 1}"})
+        return {"status": "success", "job_id": req.job_id, "model": "SepFormer WSJ02Mix",
+                "separated_sources": stems, "speaker_limit": 2,
+                "notice": "Two-source separation. Source labels are not verified speaker identities."}
+    except Exception as exc:
+        print(f"[Audio Separation Error] {exc}", file=sys.stderr)
+        raise HTTPException(status_code=500, detail=f"Audio separation failed: {exc}")
+
+@app.get("/api/audio/jobs/{job_id}/speaker/{speaker_id}")
+def download_audio_speaker(job_id: str, speaker_id: int):
+    if speaker_id not in (1, 2):
+        raise HTTPException(status_code=404, detail="Speaker output not found.")
+    path = DATA_DIR / "audio_jobs" / job_id / f"speaker_{speaker_id}.wav"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Speaker output is not ready.")
+    return FileResponse(path, media_type="audio/wav", filename=f"ReAV_TSE_{job_id}_source_{speaker_id}.wav")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("api_server:app", host="127.0.0.1", port=int(os.environ.get("REAV_API_PORT", "8765")), reload=False)
