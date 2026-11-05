@@ -341,7 +341,12 @@ def separate_audio(req: AnalyzeRequest):
             sf.write(str(out), compacted, 8000, subtype="PCM_24")
             duration = round(len(compacted) / 8000, 3)
             stems.append({
+                # Backward-compatible display index only. SepFormer source
+                # order is not a verified human speaker identity.
                 "speaker": idx + 1,
+                "source_index": idx + 1,
+                "source_type": "blind_source_estimate",
+                "identity_verified": False,
                 "duration_sec": duration,
                 "retained_intervals": [[round(a / 8000, 3), round(b / 8000, 3)] for a, b in intervals],
                 "downloadUrl": f"/api/audio/jobs/{req.job_id}/speaker/{idx + 1}"
@@ -350,8 +355,10 @@ def separate_audio(req: AnalyzeRequest):
             raise RuntimeError("No speech activity was detected in the separated sources.")
         return {"status": "success", "job_id": req.job_id, "model": "SepFormer WSJ02Mix",
                 "separated_sources": stems, "speaker_limit": 2,
+                "identity_verified": False,
                 "output_mode": "compact",
-                "notice": "Compact two-source estimate. Source labels are not verified speaker identities; arbitrary speaker counts are not supported by this checkpoint."}
+                "quality_status": "experimental_baseline_not_release_ready",
+                "notice": "These are compact blind source estimates, not verified people. This 2-source, 8 kHz checkpoint cannot separate arbitrary speaker counts and is not validated for Dari, Pashto, Arabic or English real-world recordings."}
     except Exception as exc:
         print(f"[Audio Separation Error] {exc}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=f"Audio separation failed: {exc}")
