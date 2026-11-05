@@ -21,6 +21,11 @@ class SpeakerModelRegistryTests(unittest.TestCase):
         self.assertIn("pyannote_community_1", status["models"])
         self.assertFalse(status["models"]["pyannote_community_1"]["weights_present"])
         self.assertIn("not mean", status["notice"])
+        self.assertFalse(status["capabilities"]["audio_only_identity_conditioned_extraction"])
+        self.assertFalse(status["capabilities"]["arbitrary_speaker_count_waveform_separation"])
+        self.assertFalse(status["release_quality_gate"]["ready"])
+        self.assertEqual(status["release_quality_gate"]["required_languages"],
+                         ["fa-af", "ps-af", "ar", "en-us"])
 
     def test_local_model_path_is_detected(self):
         with tempfile.TemporaryDirectory() as directory:
