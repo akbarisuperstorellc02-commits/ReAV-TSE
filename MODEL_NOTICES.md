@@ -34,3 +34,17 @@
 - Video-mode target audio is now exported as a shorter compact WAV; the pipeline also attempts to cut and concatenate the corresponding source-video intervals and mux the compact target audio.
 - Audio-only SepFormer outputs are compacted independently. Because the bundled checkpoint is still a two-source model, the two outputs are provisional source estimates rather than confirmed people.
 - Energy-based trimming is a post-processing heuristic, not a diarization or source-separation model. Quiet speech, breath sounds, and residual noise can be misclassified; this requires evaluation and tuning on real recordings.
+
+## AudioShake-parity research candidates (not bundled or enabled)
+
+- **Falcon / Falcon-Big**: https://github.com/JusperLee/Falcon and https://huggingface.co/JusperLee/Falcon. The upstream repository and released weights declare Apache-2.0. This is a 16 kHz audio-visual target-speaker extractor requiring synchronized mouth crops; it extracts one selected target and is not an Audio-only engine or an all-speaker stem separator. It is a Video Mode candidate only. The current ReAV-TSE installer does not include Falcon code or weights.
+- **pyannote.audio Community-1**: https://github.com/pyannote/pyannote-audio. Diarization/speaker evidence only; it does not separate overlapping waveforms. Its pretrained pipeline has gated model access conditions. Do not bundle until model access, checkpoint redistribution, license and offline loading have been verified.
+- **NVIDIA NeMo / Nemotron-3-Diarization**: https://docs.nvidia.com/nemo/labs-voice-agent/about/core-concepts/speech-pipeline/speaker-diarization. Current documentation describes up to eight diarization identities for this model. Diarization labels are not source-separated audio; the documented streaming service emits at most one speaker label per frame/utterance.
+- **ClearerVoice-Studio**: https://github.com/modelscope/ClearerVoice-Studio. Apache-2.0 toolkit with multiple tasks. Its documented audio-only reference-conditioned TSE task is 8 kHz; verify exact downloadable checkpoint, training mixture limits, language coverage and redistribution terms before treating it as a production engine.
+- **AudioShake Multi-Speaker 2.0**: https://audioshake.ai/press-releases/audioshake-releases-multi-speaker-2-0-to-isolate-overlapping-dialogue. Announced as Studio/API functionality. Public API docs do not establish a redistributable offline local model or SDK.
+
+## Comparative evaluation tool
+
+- `tools/benchmark_speaker_output.py` measures aligned target SI-SDR and SI-SDR improvement, with an optional interferer-to-target projection leakage diagnostic.
+- Run the benchmark on full-timeline stems before silence removal. It intentionally rejects compacted or misaligned files. SI-SDR and the leakage proxy do not replace listening tests or prove speaker identity.
+- The current workflow's unit-test step exercises the benchmark's metric and alignment checks.
