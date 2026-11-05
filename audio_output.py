@@ -137,6 +137,51 @@ def compact_audio(
     return np.concatenate(pieces, axis=0), clean
 
 
+
+def restore_estimate_scale(
+    estimate: np.ndarray,
+    normalized_source: np.ndarray,
+    sample_rate: int,
+    *,
+    max_adjustment_ms: int = 20,
+) -> np.ndarray:
+    """Restore a model estimate to the source segment's gain and exact length.
+
+    The separator input is peak-normalized before inference. Its output must be
+    rescaled by the original segment peak; normalizing every estimate to its
+    own peak destroys natural loudness differences between utterances.
+    Small decoder length drift is padded/cropped, while larger drift is rejected
+    to prevent silent timeline misalignment.
+    """
+    if not isinstance(sample_rate, int) or sample_rate <= 0:
+        raise ValueError("sample_rate must be a positive integer.")
+    if not isinstance(max_adjustment_ms, int) or max_adjustment_ms < 0:
+        raise ValueError("max_adjustment_ms must be a non-negative integer.")
+
+    est = np.asarray(estimate, dtype=np.float32).reshape(-1)
+    source = np.asarray(normalized_source, dtype=np.float32).reshape(-1)
+    if est.size == 0 or source.size == 0:
+        raise ValueError("Estimate and source segment must not be empty.")
+    if not np.isfinite(est).all() or not np.isfinite(source).all():
+        raise ValueError("Estimate and source segment must contain only finite samples.")
+
+    tolerance = int(round(sample_rate * max_adjustment_ms / 1000.0))
+    delta = len(est) - len(source)
+    if abs(delta) > tolerance:
+        raise ValueError(
+            f"Model output length differs from source by {abs(delta)} samples; "
+            f"allowed adjustment is {tolerance}. Refusing timeline misalignment."
+        )
+    if delta > 0:
+        est = est[:len(source)]
+    elif delta < 0:
+        est = np.pad(est, (0, -delta), mode="constant")
+
+    source_peak = float(np.max(np.abs(source)))
+    if source_peak <= 1e-8:
+        return np.zeros_like(source, dtype=np.float32)
+    return (est * source_peak).astype(np.float32, copy=False)
+
 def write_compacted_wav(source_audio: Path, output_wav: Path) -> dict:
     audio, sr = sf.read(str(source_audio), dtype="float32", always_2d=True)
     compacted, intervals = compact_audio(audio, sr)
