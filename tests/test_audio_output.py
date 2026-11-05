@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from audio_output import compact_audio, detect_speech_intervals, normalize_intervals
+from audio_output import compact_audio, detect_speech_intervals, normalize_intervals, restore_estimate_scale
 
 
 class CompactOutputTests(unittest.TestCase):
@@ -44,6 +44,43 @@ class CompactOutputTests(unittest.TestCase):
         compacted, _ = compact_audio(audio, 10, intervals=[(0, 4)])
         self.assertTrue(np.isfinite(compacted).all())
         self.assertEqual(compacted[1, 0], 0.0)
+
+
+class EstimateRestorationTests(unittest.TestCase):
+    def test_restores_original_segment_gain(self):
+        source = np.array([0.0, 0.5, -1.0, 0.25], dtype=np.float32)
+        estimate = np.array([0.0, 0.8, -0.6, 0.2], dtype=np.float32)
+        restored = restore_estimate_scale(estimate, source, 16000)
+        np.testing.assert_allclose(restored, estimate, rtol=1e-6, atol=1e-7)
+        # With a lower-gain original segment, output gain is reduced too.
+        quiet_source = source * 0.1
+        quiet = restore_estimate_scale(estimate, quiet_source, 16000)
+        self.assertAlmostEqual(float(np.max(np.abs(quiet))), 0.08, places=6)
+
+    def test_small_decoder_length_drift_is_corrected(self):
+        source = np.ones(1000, dtype=np.float32) * 0.2
+        estimate = np.ones(995, dtype=np.float32)
+        restored = restore_estimate_scale(estimate, source, 16000)
+        self.assertEqual(len(restored), len(source))
+        np.testing.assert_allclose(restored[-5:], 0.0)
+
+    def test_large_length_drift_is_rejected(self):
+        source = np.ones(16000, dtype=np.float32)
+        estimate = np.ones(15000, dtype=np.float32)
+        with self.assertRaisesRegex(ValueError, "Refusing timeline misalignment"):
+            restore_estimate_scale(estimate, source, 16000)
+
+    def test_non_finite_estimate_is_rejected(self):
+        source = np.ones(100, dtype=np.float32)
+        estimate = source.copy()
+        estimate[0] = np.nan
+        with self.assertRaisesRegex(ValueError, "finite samples"):
+            restore_estimate_scale(estimate, source, 16000)
+
+    def test_silent_source_returns_silence(self):
+        source = np.zeros(100, dtype=np.float32)
+        restored = restore_estimate_scale(np.ones(100, dtype=np.float32), source, 16000)
+        self.assertTrue(np.array_equal(restored, source))
 
 
 class IntervalNormalizationTests(unittest.TestCase):
