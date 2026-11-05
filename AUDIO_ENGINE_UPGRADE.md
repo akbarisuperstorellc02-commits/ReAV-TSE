@@ -57,6 +57,12 @@ A quality claim is not accepted from a successful build or a model paper alone. 
 5. Evaluate a true reference-conditioned Audio-only engine and overlap-aware multi-speaker options. If no redistributable checkpoint meets the gates, keep the limitation visible rather than shipping a misleading two-speaker UI.
 6. Integrate only candidates that pass quality, licensing, dependency and offline Windows tests.
 
+## Benchmark implementation added
+
+The repository now includes `quality_metrics.py` with paired-reference SI-SDR and SI-SDR improvement (SI-SDRi) calculations, plus optional interference-reference scoring. It rejects mismatched lengths, non-finite samples and zero-energy references. The metric API explicitly records that inputs must remain aligned and that compaction has not been applied. Unit tests use synthetic signals to verify metric behavior.
+
+This is evaluation infrastructure only. It does not improve the separator by itself and does not produce a multilingual benchmark score. A consented, time-aligned clean-stem evaluation pack is still required before any quality claim can be made.
+
 ## Current state
 
 This plan does not claim that AudioShake quality has been achieved. Falcon, pyannote, NeMo and ClearerVoice are candidates with different roles and limitations. The current installer remains a baseline build, not proof of AudioShake-parity quality.
