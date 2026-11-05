@@ -1,0 +1,152 @@
+name: Windows Desktop Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/four-language-desktop
+
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements-desktop.txt
+      - name: Test compact speech output
+        run: python -m unittest discover -s tests -v
+      - name: Download pretrained AI checkpoints
+        shell: pwsh
+        run: |
+          python -m pip install huggingface_hub
+          New-Item -ItemType Directory -Force backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K | Out-Null
+          New-Item -ItemType Directory -Force backend/model_cache/torch_cache/hub/checkpoints | Out-Null
+          python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='alibabasglab/AV_MossFormer2_TSE_16K', filename='last_best_checkpoint.pt', local_dir='backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K')"
+          python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='alibabasglab/AV_MossFormer2_TSE_16K', filename='last_best_checkpoint', local_dir='backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K')"
+          $model = 'backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K/last_best_checkpoint.pt'
+          $sha = (Get-FileHash $model -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($sha -ne '0e60209aab0b31c38deea4ab116100acbbf3a07db8bc559f796f118da1a767d5') { throw "Unexpected AV-MossFormer2 checkpoint SHA256: $sha" }
+          $pointer = (Get-Content 'backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K/last_best_checkpoint' -Raw).Trim()
+          if ($pointer -ne 'last_best_checkpoint.pt') { throw "Unexpected AV-MossFormer2 checkpoint pointer: $pointer" }
+          python -c "import torch; torch.hub.load_state_dict_from_url('https://download.pytorch.org/models/resnet18-f37072fd.pth', model_dir='backend/model_cache/torch_cache/hub/checkpoints', progress=True)"
+          python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='speechbrain/sepformer-wsj02mix', local_dir='backend/model_cache/audio_models/sepformer-wsj02mix')"
+      - name: Validate bundled pretrained model weights
+        shell: pwsh
+        run: |
+          $env:TORCH_HOME = (Resolve-Path 'backend/model_cache/torch_cache').Path
+          $env:REAV_DATA_DIR = (Join-Path $env:RUNNER_TEMP 'reav-model-validation')
+          python -c "import os,sys; sys.path.insert(0, os.path.abspath('.')); os.chdir('backend/model_cache'); from job_pipeline import get_resnet_embedder, get_clearvoice_model; get_resnet_embedder(); model,args=get_clearvoice_model(); print('RESNET_AND_AV_MOSSFORMER2_MODEL_LOAD_OK', type(model).__name__, args.device)"
+          python -c "from speechbrain.inference.separation import SepformerSeparation; m=SepformerSeparation.from_hparams(source='backend/model_cache/audio_models/sepformer-wsj02mix', savedir='backend/model_cache/audio_models/sepformer-wsj02mix', run_opts={'device':'cpu'}); print('OFFLINE_SEPFORMER_MODEL_LOAD_OK', type(m).__name__)"
+
+      - name: Package Python backend
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onedir --name reav_backend --distpath backend/dist --workpath backend/build --add-data 'yunet.onnx;.' --collect-all clearvoice --collect-all torch --collect-all torchvision --collect-all cv2 --collect-all imageio_ffmpeg --collect-all soundfile --collect-all scipy --collect-all torchaudio --collect-all huggingface_hub --collect-all speechbrain --collect-all hyperpyyaml --hidden-import speechbrain.inference.separation --hidden-import uvicorn.logging --hidden-import uvicorn.loops --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols --hidden-import uvicorn.protocols.http --hidden-import uvicorn.protocols.websockets --hidden-import uvicorn.lifespan --hidden-import uvicorn.lifespan.on --hidden-import multipart --hidden-import fastapi desktop_backend.py
+      - name: Smoke-test packaged FastAPI executable
+        shell: pwsh
+        run: |
+          $env:REAV_API_PORT = '8766'
+          $env:REAV_DATA_DIR = (Join-Path $env:RUNNER_TEMP 'reav-smoke-data')
+          $exe = Resolve-Path 'backend/dist/reav_backend/reav_backend.exe'
+          $process = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
+          try {
+            $healthy = $false
+            for ($i = 0; $i -lt 45; $i++) {
+              try {
+                $response = Invoke-RestMethod 'http://127.0.0.1:8766/api/health' -TimeoutSec 2
+                if ($response.status -eq 'ok') { $healthy = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            if (-not $healthy) { throw 'Packaged FastAPI backend did not pass its health check.' }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+          }
+
+      - name: End-to-end target-speaker extraction test with upstream video fixture
+        shell: pwsh
+        run: |
+          $env:REAV_API_PORT = '8767'
+          $env:REAV_DATA_DIR = (Join-Path $env:RUNNER_TEMP 'reav-e2e-data')
+          $env:TORCH_HOME = (Resolve-Path 'backend/model_cache/torch_cache').Path
+          $base = 'http://127.0.0.1:8767'
+          $exe = (Resolve-Path 'backend/dist/reav_backend/reav_backend.exe').Path
+          $workingDirectory = (Resolve-Path 'backend/model_cache').Path
+          $video = Join-Path $env:RUNNER_TEMP 'reav-tse-fixture-001.avi'
+          $wav = Join-Path $env:RUNNER_TEMP 'reav-tse-extracted.wav'
+          $process = $null
+          Push-Location $workingDirectory
+          try {
+            Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/modelscope/ClearerVoice-Studio/main/clearvoice/samples/path_to_input_videos_tse/001.avi' -OutFile $video -TimeoutSec 180
+            $process = Start-Process -FilePath $exe -WorkingDirectory $workingDirectory -PassThru -WindowStyle Hidden
+            $healthy = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              try {
+                $health = Invoke-RestMethod "$base/api/health" -TimeoutSec 2
+                if ($health.status -eq 'ok') { $healthy = $true; break }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            if (-not $healthy) { throw 'Packaged API did not start for the end-to-end extraction test.' }
+
+            $uploadJson = & curl.exe -sS -f -X POST -F "file=@$video" "$base/api/upload"
+            if ($LASTEXITCODE -ne 0) { throw 'Video upload failed in the end-to-end extraction test.' }
+            $upload = $uploadJson | ConvertFrom-Json
+            if (-not $upload.job_id) { throw 'Upload response did not contain a job ID.' }
+
+            $analyzeBody = @{ job_id = $upload.job_id } | ConvertTo-Json -Compress
+            $null = Invoke-RestMethod -Uri "$base/api/analyze" -Method Post -ContentType 'application/json' -Body $analyzeBody -TimeoutSec 1800
+            $speakers = Invoke-RestMethod -Uri "$base/api/jobs/$($upload.job_id)/speakers" -TimeoutSec 60
+            if (-not $speakers.persons -or $speakers.persons.Count -lt 1) { throw 'The sample video produced no detected speakers.' }
+
+            $targetId = $speakers.persons[0].id
+            $extractBody = @{ job_id = $upload.job_id; target = $targetId; mode = 'person' } | ConvertTo-Json -Compress
+            $extraction = Invoke-RestMethod -Uri "$base/api/extract" -Method Post -ContentType 'application/json' -Body $extractBody -TimeoutSec 3600
+            if ($extraction.report.num_segments_combined -lt 1) { throw 'The extraction produced no speech segments.' }
+            if ($extraction.report.active_speech_duration_sec -le 0) { throw 'The extracted audio contains no active speech.' }
+
+            Invoke-WebRequest -Uri "$base$($extraction.downloadUrl)" -OutFile $wav -TimeoutSec 180
+            if ((Get-Item $wav).Length -le 44) { throw 'The extracted WAV file is empty or invalid.' }
+            Write-Host "REAL_VIDEO_EXTRACTION_OK job=$($upload.job_id) target=$targetId segments=$($extraction.report.num_segments_combined) active_speech_seconds=$($extraction.report.active_speech_duration_sec) wav_bytes=$((Get-Item $wav).Length)"
+          } finally {
+            if ($process -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+            Pop-Location
+          }
+
+      - name: Install frontend and Electron dependencies
+        working-directory: frontend
+        run: npm install
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+      - name: Build Windows installer
+        working-directory: frontend
+        run: npm run dist
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Windows-Installer
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14

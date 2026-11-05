@@ -1,3 +1,7 @@
+@import '@fontsource/noto-sans-arabic/400.css';
+@import '@fontsource/noto-sans-arabic/500.css';
+@import '@fontsource/noto-sans-arabic/600.css';
+@import '@fontsource/noto-sans-arabic/700.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -46,3 +50,27 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
 }
+
+/* Readable bundled Arabic-script typography and correct RTL flow */
+html[dir='rtl'] body,
+html[dir='rtl'] .font-sans,
+html[dir='rtl'] .font-display,
+html[dir='rtl'] .font-mono,
+html[dir='rtl'] input,
+html[dir='rtl'] button,
+html[dir='rtl'] select,
+html[dir='rtl'] textarea {
+  font-family: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* Mirror physical Tailwind offsets and auto margins for RTL screens. */
+html[dir='rtl'] .left-0 { left: auto !important; right: 0 !important; }
+html[dir='rtl'] .right-0 { right: auto !important; left: 0 !important; }
+html[dir='rtl'] .left-1 { left: auto !important; right: 0.25rem !important; }
+html[dir='rtl'] .right-1 { right: auto !important; left: 0.25rem !important; }
+html[dir='rtl'] .left-2 { left: auto !important; right: 0.5rem !important; }
+html[dir='rtl'] .right-2 { right: auto !important; left: 0.5rem !important; }
+html[dir='rtl'] .ml-auto { margin-left: 0 !important; margin-right: auto !important; }
+html[dir='rtl'] .mr-auto { margin-right: 0 !important; margin-left: auto !important; }
+html[dir='rtl'] .text-left { text-align: right !important; }
+html[dir='rtl'] .text-right { text-align: left !important; }

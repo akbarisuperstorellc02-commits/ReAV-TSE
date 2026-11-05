@@ -1,7 +1,7 @@
-# ReAV-TSE: Audio-Visual Target Speaker Extraction with Selective Auditory Attention
+# ReAV-TSE-BH: Audio-Visual Target Speaker Extraction with Selective Auditory Attention
 
 <p align="center">
-  <img src="frontend/src/assets/hero.png" alt="ReAV-TSE Banner" width="700"/>
+  <img src="frontend/src/assets/hero.png" alt="ReAV-TSE-BH Banner" width="700"/>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 
 ## 📌 Overview
 
-**ReAV-TSE** is an end-to-end framework and full-stack platform for **Audio-Visual Target Speaker Extraction (AV-TSE)**. In challenging "cocktail party" environments with overlapping speech, background noise, and multiple visible speakers, ReAV-TSE isolates and enhances the speech of a specific individual by combining:
+**ReAV-TSE-BH** is an end-to-end framework and full-stack platform for **Audio-Visual Target Speaker Extraction (AV-TSE)**. In challenging "cocktail party" environments with overlapping speech, background noise, and multiple visible speakers, ReAV-TSE isolates and enhances the speech of a specific individual by combining:
 
 1. **Computer Vision**: Facial detection, landmark localization, and lip motion tracking.
 2. **Selective Auditory Attention**: Multi-modal fusion architectures that synchronize speech phonemes with visual lip movements to filter out interfering voices.
@@ -290,7 +290,7 @@ bash configs/run_eval.sh
 | Method | Endpoint | Description |
 |:---|:---|:---|
 | `GET` | `/api/health` | Service health status and timestamp |
-| `POST` | `/api/upload` | Upload a new video file or load sample demo video |
+| `POST` | `/api/upload` | Upload a new user-provided video file |
 | `POST` | `/api/analyze` | Execute face detection, tracking, and speaker clustering |
 | `POST` | `/api/extract` | Run TSE extraction for a selected `person_id` or `track_id` |
 | `GET` | `/api/jobs/{job_id}/status` | Query current pipeline progress and logs |
@@ -318,3 +318,42 @@ If this project or code aids your research or development, please cite:
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## Windows Desktop Application
+
+The `feature/four-language-desktop` branch contains the Windows desktop packaging work for **ReAV-TSE-BH**.
+
+- Windows 10/11 x64 desktop shell built with Electron.
+- React interface with English, Afghan Dari, Pashto, and Arabic language selection.
+- Right-to-left layout and bundled Noto Sans Arabic font for Dari, Pashto, and Arabic.
+- Python FastAPI backend packaged with PyInstaller.
+- FFmpeg executable supplied by the bundled `imageio-ffmpeg` package.
+- AV-MossFormer2 TSE checkpoint and ResNet-18 visual weights downloaded and included by the Windows CI build.
+- Uploaded videos, jobs, and generated WAV files are stored in the current Windows user's application data directory.
+
+### Build the Windows installer
+
+The GitHub Actions workflow `.github/workflows/windows-desktop.yml` builds the Windows x64 NSIS installer. It installs CPU PyTorch, packages the Python backend, downloads and verifies the pretrained checkpoints, builds the Vite frontend, and creates the Electron installer.
+
+The installer artifact is published by the workflow as **ReAV-TSE-Windows-Installer**. The bundled AI checkpoint is approximately 735 MB, so the final installer is expected to be large.
+
+### Desktop dependency set
+
+The desktop build uses `requirements-desktop.txt` and CPU-only PyTorch wheels. The original `requirements.txt` remains for the existing research/runtime environment.
+
+See [MODEL_NOTICES.md](MODEL_NOTICES.md) for model and bundled asset attribution.
+
+
+---
+
+## Audio engine quality upgrade
+
+The AudioShake-parity research and migration gates are tracked in [`AUDIO_ENGINE_UPGRADE.md`](AUDIO_ENGINE_UPGRADE.md). Current model limits and third-party notices are in [`MODEL_NOTICES.md`](MODEL_NOTICES.md).
+
+For objective comparison, benchmark each **full-timeline, aligned** target stem before silence compaction:
+
+```bash
+python tools/benchmark_speaker_output.py --mixture mix.wav --target-reference target.wav --estimate candidate.wav --interferer-reference other.wav
+```
+
+All reference and estimate WAVs must have the same sample rate, length and source-time alignment. The report includes target SI-SDR, SI-SDR improvement and an optional interferer-to-target projection diagnostic. These metrics do not replace listening tests and do not prove correct speaker identity.

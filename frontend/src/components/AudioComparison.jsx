@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Volume2, Sparkles, SlidersHorizontal } from 'lucide-react';
 import WaveformPlayer from './WaveformPlayer';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function AudioComparison({
   originalAudioUrl,
   targetAudioUrl,
   speakerName = "Selected Target"
 }) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('sideBySide'); // 'sideBySide' or 'target' or 'original'
 
   return (
@@ -16,13 +18,13 @@ export default function AudioComparison({
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-lavender-400 uppercase tracking-wider mb-1">
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>A/B Audio Evaluation</span>
+            <span>{t('evaluationTitle')}</span>
           </div>
           <h3 className="text-xl font-bold font-display text-white tracking-tight">
-            Original Mix vs Isolated Target Speech
+            {t('comparisonTitle')}
           </h3>
           <p className="text-xs text-neutral-400 mt-0.5">
-            Compare the multi-speaker overlapping original soundtrack against the isolated target voice.
+            {t('comparisonDescription')}
           </p>
         </div>
 
@@ -36,7 +38,7 @@ export default function AudioComparison({
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            Stacked View
+            {t('stackedView')}
           </button>
           <button
             onClick={() => setActiveTab('target')}
@@ -46,7 +48,7 @@ export default function AudioComparison({
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            Isolated Only
+            {t('isolatedOnly')}
           </button>
           <button
             onClick={() => setActiveTab('original')}
@@ -56,7 +58,7 @@ export default function AudioComparison({
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
-            Original Only
+            {t('originalOnly')}
           </button>
         </div>
       </div>
@@ -68,16 +70,16 @@ export default function AudioComparison({
             <div className="flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-lavender-300 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-accent" />
-                EXTRACTED TARGET SPEECH ({speakerName})
+                {t('extractedTargetSpeech')} ({speakerName})
               </span>
               <span className="text-emerald-400 font-mono text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                Interfering speakers suppressed
+                {t('interferingSuppressed')}
               </span>
             </div>
             <WaveformPlayer
               audioUrl={targetAudioUrl}
-              title={`Clean Target Voice: ${speakerName}`}
-              subtitle="Reconstructed speech timeline with silent gaps preserved"
+              title={`${t('cleanTargetVoice')}: ${speakerName}`}
+              subtitle={t('preservedSilence')}
               accentColor="violet"
             />
           </div>
@@ -88,16 +90,16 @@ export default function AudioComparison({
             <div className="flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-neutral-400 flex items-center gap-1.5">
                 <Volume2 className="w-3.5 h-3.5 text-neutral-500" />
-                ORIGINAL VIDEO AUDIO (FULL MIX)
+                {t('originalVideoAudio')}
               </span>
               <span className="text-neutral-400 font-mono text-[11px] bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.08]">
-                All voices + background chatter
+                {t('allVoices')}
               </span>
             </div>
             <WaveformPlayer
               audioUrl={originalAudioUrl}
-              title="Original 16kHz Mixed Audio"
-              subtitle="Raw soundtrack extracted from input video"
+              title={t("originalMixedAudio")}
+              subtitle={t("rawSoundtrack")}
               accentColor="neutral"
             />
           </div>

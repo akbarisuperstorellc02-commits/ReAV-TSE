@@ -1,0 +1,15 @@
+# Desktop runtime dependencies. Install CPU PyTorch separately in the Windows build workflow.
+numpy==1.26.4
+soundfile==0.12.1
+scipy==1.13.1
+opencv-python==4.10.0.84
+fastapi
+uvicorn
+python-multipart
+clearvoice==0.1.2
+imageio-ffmpeg
+pyinstaller
+speechbrain==1.0.3
+hyperpyyaml==1.2.2
+# HyperPyYAML 1.2.2 uses the ruamel.yaml Loader API removed in 0.18+.
+ruamel.yaml==0.17.40

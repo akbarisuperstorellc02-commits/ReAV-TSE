@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, Sparkles } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function WaveformPlayer({
   audioUrl,
@@ -9,6 +10,7 @@ export default function WaveformPlayer({
   onDownload,
   downloadFilename = "extracted_speaker.wav"
 }) {
+  const { t } = useLanguage();
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -96,7 +98,7 @@ export default function WaveformPlayer({
           <h3 className="text-base font-semibold text-white tracking-tight flex items-center gap-2">
             <span>{title}</span>
             <span className="px-2 py-0.5 rounded-full bg-accent-muted border border-accent/20 text-lavender-300 text-[10px] font-mono uppercase">
-              16kHz Mono WAV
+              {t('audioFormat')}
             </span>
           </h3>
           <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>
@@ -106,10 +108,10 @@ export default function WaveformPlayer({
           <button
             onClick={onDownload}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface hover:bg-accent/20 text-neutral-300 hover:text-white border border-surface-border hover:border-accent/40 text-xs font-medium transition-all"
-            title="Download WAV File"
+            title={t("downloadWavTitle")}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download WAV</span>
+            <span>{t('downloadWavLabel')}</span>
           </button>
         )}
       </div>
@@ -157,6 +159,7 @@ export default function WaveformPlayer({
         {/* Left: Playback controls */}
         <div className="flex items-center gap-3">
           <button
+            aria-label={isPlaying ? t('pause') : t('play')}
             onClick={togglePlay}
             className="w-11 h-11 rounded-full bg-accent hover:bg-accent-hover text-white flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.35)] transition-all cursor-pointer transform hover:scale-105 active:scale-95"
           >
@@ -168,6 +171,7 @@ export default function WaveformPlayer({
           </button>
 
           <button
+            aria-label={t('restart')}
             onClick={() => {
               if (audioRef.current) {
                 audioRef.current.currentTime = 0;
@@ -176,7 +180,7 @@ export default function WaveformPlayer({
               }
             }}
             className="w-8 h-8 rounded-lg bg-surface hover:bg-surface-elevated text-neutral-400 hover:text-white flex items-center justify-center border border-surface-border transition-colors"
-            title="Replay from start"
+            title={t("replayStart")}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -190,7 +194,7 @@ export default function WaveformPlayer({
 
         {/* Right: Volume slider */}
         <div className="flex items-center gap-2 text-neutral-400">
-          <button onClick={toggleMute} className="hover:text-white transition-colors">
+          <button onClick={toggleMute} aria-label={isMuted || volume === 0 ? t("unmute") : t("mute")} className="hover:text-white transition-colors">
             {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
           <input

@@ -16,6 +16,7 @@ from scipy import signal
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
+from audio_output import compact_audio, compact_video_to_intervals, restore_estimate_scale
 
 from clearvoice.utils.video_process import track_shot
 import clearvoice.models.av_mossformer2_tse.av_mossformer2 as av_module
@@ -50,8 +51,10 @@ try:
 except RuntimeError:
     pass
 
-BASE_DIR = Path(__file__).resolve().parent
-JOBS_DIR = BASE_DIR / "outputs_clearvoice" / "jobs"
+BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+DATA_DIR = Path(os.environ.get('REAV_DATA_DIR', str(Path.home() / 'ReAV-TSE')))
+JOBS_DIR = DATA_DIR / 'jobs'
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
 YUNET_PATH = str(BASE_DIR / "yunet.onnx")
 
 # Global models
@@ -109,7 +112,7 @@ def update_job_status(job_id: str, stage: str, message: str, progress: float):
     with open(status_file, "w") as f:
         json.dump(status_data, f, indent=2)
 
-def create_job(video_path: Path, is_sample: bool = False) -> str:
+def create_job(video_path: Path) -> str:
     job_id = f"job_{int(time.time())}_{uuid.uuid4().hex[:6]}"
     job_dir = JOBS_DIR / job_id
     job_dir.mkdir(parents=True, exist_ok=True)
@@ -123,10 +126,11 @@ def create_job(video_path: Path, is_sample: bool = False) -> str:
     return job_id
 
 def extract_audio_from_video(video_path: Path, audio_path: Path):
+    import imageio_ffmpeg
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     cmd = [
-        "ffmpeg", "-y", "-i", str(video_path),
-        "-vn", "-ac", "1", "-ar", "16000",
-        str(audio_path), "-loglevel", "error"
+        ffmpeg_exe, "-hide_banner", "-loglevel", "error", "-y", "-i", str(video_path),
+        "-vn", "-ac", "1", "-ar", "16000", str(audio_path)
     ]
     subprocess.run(cmd, check=True)
 
@@ -476,22 +480,24 @@ def extract_job_speaker(job_id: str, target: str, mode: str = "person"):
             else:
                 visual = visual[:req_visual_len]
 
-            audio_max = np.max(np.abs(audio_seg))
-            if audio_max > 0:
-                audio_seg /= audio_max
+            # Preserve the segment's original gain so separate utterances do
+            # not all become equally loud after model inference.
+            audio_peak = float(np.max(np.abs(audio_seg)))
+            if not np.isfinite(audio_peak) or audio_peak <= 1e-8:
+                continue
+            normalized_audio = audio_seg / audio_peak
 
-            audio_in = np.expand_dims(audio_seg, axis=0)
+            audio_in = np.expand_dims(normalized_audio, axis=0)
             visual_in = np.expand_dims(visual, axis=0)
 
             from clearvoice.utils.decode import decode_one_audio_AV_MossFormer2_TSE_16K
             with torch.inference_mode():
                 est_audio = decode_one_audio_AV_MossFormer2_TSE_16K(model, (audio_in, visual_in), args)
 
-            max_est = np.max(np.abs(est_audio))
-            if max_est > 0:
-                est_audio = est_audio / max_est
-
-            sf.write(str(track_wav), est_audio, 16000)
+            # Fail safely if the model changes the segment duration beyond a
+            # tiny codec/decoder tolerance; never silently shift the timeline.
+            est_audio = restore_estimate_scale(est_audio, normalized_audio, sr)
+            sf.write(str(track_wav), est_audio, sr)
         else:
             est_audio, _ = sf.read(str(track_wav), dtype='float32')
 
@@ -524,18 +530,35 @@ def extract_job_speaker(job_id: str, target: str, mode: str = "person"):
     if max_val > 0.95:
         timeline = timeline * (0.95 / max_val)
 
+    compacted, retained_intervals = compact_audio(timeline, sr)
+    if not len(compacted):
+        raise ValueError("No reliable target speech was detected for the selected speaker.")
     out_file = job_dir / f"target_speaker_{target_str}.wav"
-    sf.write(str(out_file), timeline, sr)
+    sf.write(str(out_file), compacted, sr, subtype="PCM_24")
 
-    active_mask = np.abs(timeline) > 1e-4
-    active_sec = round(float(np.sum(active_mask) / sr), 2)
-    silence_sec = round(total_duration - active_sec, 2)
+    compact_video = job_dir / f"target_video_{target_str}.mp4"
+    video_export = None
+    try:
+        import imageio_ffmpeg
+        retained_seconds = [[a / sr, b / sr] for a, b in retained_intervals]
+        compact_video_to_intervals(video_file, compact_video, retained_seconds, out_file, imageio_ffmpeg.get_ffmpeg_exe())
+        video_export = compact_video.name
+    except Exception as video_exc:
+        print(f"[Compact Video Export Warning] {video_exc}", file=sys.stderr)
+
+    active_sec = round(len(compacted) / sr, 2)
+    silence_sec = 0.0
 
     report = {
         "job_id": job_id,
         "target": target_str,
         "target_name": target_name,
-        "total_timeline_duration_sec": round(total_duration, 2),
+        "source_duration_sec": round(total_duration, 2),
+        "output_duration_sec": active_sec,
+        "removed_duration_sec": round(max(0.0, total_duration - active_sec), 2),
+        "output_mode": "compact",
+        "video_export": video_export,
+        "retained_intervals_seconds": [[round(a / sr, 4), round(b / sr, 4)] for a, b in retained_intervals],
         "active_speech_duration_sec": active_sec,
         "silence_duration_sec": silence_sec,
         "num_segments_combined": len(combined_segments),

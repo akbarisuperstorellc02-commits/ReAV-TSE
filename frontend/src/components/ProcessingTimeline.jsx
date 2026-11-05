@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Circle, Loader2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage, localizeSpeakerTitle } from '../i18n/LanguageContext';
+import { apiUrl } from '../lib/api';
 
 const PIPELINE_STAGES = [
-  { id: 'uploading', title: 'Video uploaded', desc: 'Raw video stream decoded into audio & video frames' },
-  { id: 'detecting_faces', title: 'Detecting faces', desc: 'YuNet neural face detector processing visual frames' },
-  { id: 'tracking_speakers', title: 'Tracking speakers', desc: 'Linking mouth and face bounding boxes across shots' },
-  { id: 'speakers_detected', title: 'Speakers detected', desc: 'Deep visual embeddings clustered into distinct individuals' },
-  { id: 'target_selected', title: 'Target selected', desc: 'Visual lip-sync conditioning reference locked' },
-  { id: 'extracting_speech', title: 'Extracting speech', desc: 'AV-MossFormer2 isolating vocal harmonics for target' },
-  { id: 'combining_segments', title: 'Combining speech segments', desc: 'Reconstructing timeline and inserting natural silence gaps' },
-  { id: 'completed', title: 'Complete', desc: 'Clean target vocal track ready for evaluation' },
+  { id: 'uploading', title: 'uploaded', desc: 'decodeFrames' },
+  { id: 'detecting_faces', title: 'detectFaces', desc: 'detectDesc' },
+  { id: 'tracking_speakers', title: 'trackSpeakers', desc: 'trackDesc' },
+  { id: 'speakers_detected', title: 'speakersDetected', desc: 'clusterDesc' },
+  { id: 'target_selected', title: 'targetChosen', desc: 'targetDesc' },
+  { id: 'extracting_speech', title: 'extractingSpeech', desc: 'extractDesc' },
+  { id: 'combining_segments', title: 'combiningSpeech', desc: 'combineDesc' },
+  { id: 'completed', title: 'complete', desc: 'completeDesc' },
 ];
 
 export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, onComplete }) {
+  const { t } = useLanguage();
+  const speakerTitle = localizeSpeakerTitle(selectedPerson?.title, t);
   const [currentStageId, setCurrentStageId] = useState('extracting_speech');
-  const [statusMessage, setStatusMessage] = useState('AV-MossFormer2 isolating vocal harmonics for target...');
+  const [statusMessage, setStatusMessage] = useState('');
   const [progress, setProgress] = useState(0.4);
 
   useEffect(() => {
@@ -23,12 +27,12 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/jobs/${jobId}/status`);
+        const res = await fetch(apiUrl(`/api/jobs/${jobId}/status`));
         if (res.ok) {
           const data = await res.json();
           if (data.stage) {
             setCurrentStageId(data.stage);
-            setStatusMessage(data.message || '');
+            setStatusMessage(data.stage === 'completed' ? t('completeDesc') : t(({detecting_faces:'detectDesc',tracking_speakers:'trackDesc',speakers_detected:'clusterDesc',extracting_speech:'extractDesc',combining_segments:'combineDesc'})[data.stage] || 'extractDesc'));
             setProgress(data.progress || 0.5);
 
             if (data.stage === 'completed' || isComplete) {
@@ -45,7 +49,7 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
     }, 400);
 
     return () => clearInterval(interval);
-  }, [jobId, isComplete, onComplete]);
+  }, [jobId, isComplete, onComplete, t]);
 
   // Determine active step index
   const activeIndex = Math.max(
@@ -64,13 +68,13 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
         />
         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-accent shadow-[0_0_35px_rgba(139,92,246,0.5)] p-0.5 bg-surface-elevated">
           <img
-            src={selectedPerson?.thumbnailUrl}
-            alt={selectedPerson?.title}
+            src={apiUrl(selectedPerson?.thumbnailUrl || '')}
+            alt={speakerTitle}
             className="w-full h-full object-cover rounded-full"
           />
         </div>
         <div className="absolute -bottom-2 -right-1 px-2.5 py-0.5 rounded-full bg-accent text-[11px] font-mono text-white font-medium border border-white/20 shadow-md">
-          {selectedPerson?.title}
+          {speakerTitle}
         </div>
       </div>
 
@@ -78,10 +82,10 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-muted border border-accent/20 text-lavender-300 text-xs font-mono tracking-wide mb-3">
           <Sparkles className="w-3.5 h-3.5 text-accent animate-spin" style={{ animationDuration: '4s' }} />
-          <span>AUDIO + VISUAL NEURAL EXTRACTION</span>
+          <span>{t('pipelineLabel')}</span>
         </div>
         <h2 className="text-3xl font-bold font-display text-white tracking-tight">
-          Extracting target speaker
+          {t('extractingTargetTitle')}
         </h2>
         <p className="text-xs text-neutral-400 mt-1 max-w-md font-mono">
           {statusMessage}
@@ -146,10 +150,10 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
 
                 <div>
                   <p className={`text-xs font-medium ${isActive ? 'text-white font-semibold' : isDone ? 'text-neutral-200' : 'text-neutral-500'}`}>
-                    {step.title}
+                    {t(step.title)}
                   </p>
                   <p className="text-[10px] text-neutral-400">
-                    {step.desc}
+                    {t(step.desc)}
                   </p>
                 </div>
               </div>
@@ -157,7 +161,7 @@ export default function ProcessingTimeline({ jobId, selectedPerson, isComplete, 
               {isActive && (
                 <div className="flex items-center gap-1.5 text-accent text-[11px] font-mono">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Running</span>
+                  <span>{t('running')}</span>
                 </div>
               )}
             </div>

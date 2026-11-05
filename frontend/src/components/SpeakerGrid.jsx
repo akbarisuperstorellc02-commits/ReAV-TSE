@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Users, Layers, Sparkles, Loader2 } from 'lucide-react';
 import SpeakerCard from './SpeakerCard';
+import { useLanguage, localizeSpeakerTitle } from '../i18n/LanguageContext';
 
 export default function SpeakerGrid({
   persons = [],
@@ -11,6 +12,8 @@ export default function SpeakerGrid({
   isExtracting,
   isAnalyzing = false
 }) {
+  const { t } = useLanguage();
+  const selectedSpeakerTitle = localizeSpeakerTitle(selectedPerson?.title, t);
   const [viewMode, setViewMode] = useState('grouped'); // 'grouped' or 'tracks'
 
   return (
@@ -19,13 +22,13 @@ export default function SpeakerGrid({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold font-display text-white tracking-tight flex items-center gap-2">
-            <span>Select a target speaker</span>
+            <span>{t('selectTarget')}</span>
             <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           </h2>
           <p className="text-xs text-neutral-400 mt-0.5">
             {isAnalyzing 
-              ? "Running YuNet face detection & tracking on uploaded video..."
-              : `${persons.length} distinct speaker${persons.length === 1 ? '' : 's'} detected in this video`
+              ? t('runningFaceDetection')
+              : `${persons.length} ${t('detectedSpeakers')}`
             }
           </p>
         </div>
@@ -42,7 +45,7 @@ export default function SpeakerGrid({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Speakers ({persons.length})</span>
+              <span>{t('speakers')} ({persons.length})</span>
             </button>
             <button
               onClick={() => setViewMode('tracks')}
@@ -53,7 +56,7 @@ export default function SpeakerGrid({
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>Raw Tracks ({tracks.length})</span>
+              <span>{t('rawTracks')} ({tracks.length})</span>
             </button>
           </div>
         )}
@@ -67,19 +70,19 @@ export default function SpeakerGrid({
               <Loader2 className="w-7 h-7 animate-spin" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Analyzing Video Frames</h3>
+              <h3 className="text-base font-semibold text-white">{t('analyzingFrames')}</h3>
               <p className="text-xs text-neutral-400 max-w-sm mt-1">
-                YuNet neural face detector is processing shots, tracking lip movements, and clustering speaker identities.
+                {t('analysisDescription')}
               </p>
             </div>
             <div className="flex items-center gap-2 text-[11px] font-mono text-lavender-300 bg-accent-muted px-3 py-1 rounded-full border border-accent/20">
               <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
-              <span>Extracting fresh face tracks</span>
+              <span>{t('extractingTracks')}</span>
             </div>
           </div>
         ) : persons.length === 0 ? (
           <div className="h-full min-h-[260px] flex flex-col items-center justify-center text-center p-6 text-neutral-500 text-xs">
-            No faces detected in this video. Please try a different clip with visible speakers.
+            {t('noFaces')}
           </div>
         ) : viewMode === 'grouped' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -101,8 +104,8 @@ export default function SpeakerGrid({
                   key={track.id}
                   onClick={() => onSelectPerson({
                     id: track.id,
-                    title: `Track ${track.trackNumber}`,
-                    role: `Raw Segment (${track.belongsTo})`,
+                    title: `${t('trackLabel')} ${track.trackNumber}`,
+                    role: `${t('rawSegment')} (${track.belongsTo})`,
                     detectedDuration: track.duration,
                     timeSpan: track.timeSpan,
                     tracksCount: 1,
@@ -117,7 +120,7 @@ export default function SpeakerGrid({
                 >
                   <img
                     src={track.thumbnailUrl}
-                    alt={`Track ${track.trackNumber}`}
+                    alt={`${t('trackLabel')} ${track.trackNumber}`}
                     className="w-full aspect-square object-cover rounded-lg mb-1.5"
                     loading="lazy"
                   />
@@ -137,14 +140,14 @@ export default function SpeakerGrid({
       <div className="pt-4 border-t border-surface-border flex items-center justify-between gap-3">
         <div className="text-xs text-neutral-400">
           {isAnalyzing ? (
-            <span className="text-neutral-500 font-mono text-[11px]">Analysis in progress...</span>
+            <span className="text-neutral-500 font-mono text-[11px]">{t('analysisInProgress')}</span>
           ) : selectedPerson ? (
             <span className="text-white flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
-              Target: <strong className="text-lavender-200">{selectedPerson.title}</strong> ({selectedPerson.detectedDuration}s)
+              {t('targetPrefix')} <strong className="text-lavender-200">{selectedSpeakerTitle}</strong> ({selectedPerson.detectedDuration}s)
             </span>
           ) : (
-            <span>Please choose a target speaker above</span>
+            <span>{t('chooseSpeaker')}</span>
           )}
         </div>
 
@@ -158,7 +161,7 @@ export default function SpeakerGrid({
               : 'bg-surface-elevated text-neutral-500 border border-surface-border cursor-not-allowed'
           }`}
         >
-          <span>Extract this speaker</span>
+          <span>{t('extractThisSpeaker')}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
