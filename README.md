@@ -342,3 +342,18 @@ The installer artifact is published by the workflow as **ReAV-TSE-Windows-Instal
 The desktop build uses `requirements-desktop.txt` and CPU-only PyTorch wheels. The original `requirements.txt` remains for the existing research/runtime environment.
 
 See [MODEL_NOTICES.md](MODEL_NOTICES.md) for model and bundled asset attribution.
+
+
+---
+
+## Audio engine quality upgrade
+
+The AudioShake-parity research and migration gates are tracked in [`AUDIO_ENGINE_UPGRADE.md`](AUDIO_ENGINE_UPGRADE.md). Current model limits and third-party notices are in [`MODEL_NOTICES.md`](MODEL_NOTICES.md).
+
+For objective comparison, benchmark each **full-timeline, aligned** target stem before silence compaction:
+
+```bash
+python tools/benchmark_speaker_output.py --mixture mix.wav --target-reference target.wav --estimate candidate.wav --interferer-reference other.wav
+```
+
+All reference and estimate WAVs must have the same sample rate, length and source-time alignment. The report includes target SI-SDR, SI-SDR improvement and an optional interferer-to-target projection diagnostic. These metrics do not replace listening tests and do not prove correct speaker identity.
