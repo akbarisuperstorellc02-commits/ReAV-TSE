@@ -79,10 +79,29 @@ def model_status() -> dict[str, Any]:
                 "falcon_big", "spex_plus", "nvidia_nemotron_diarization"
             } else ("configured" if exists else "not_installed"),
         }
+    # Do not equate model files or a successful CI build with usable,
+    # quality-validated speaker extraction. These gates stay closed until
+    # production adapters and multilingual real-recording evaluations exist.
     return {
         "offline_mode": True,
         "models": items,
-        "notice": "A model being listed does not mean its adapter is installed or its quality is validated.",
+        "capabilities": {
+            "local_diarization": bool(items["pyannote_community_1"]["weights_present"]),
+            "audio_only_identity_conditioned_extraction": False,
+            "arbitrary_speaker_count_waveform_separation": False,
+            "video_target_extraction_baseline": bool(items["av_mossformer2"]["weights_present"]),
+            "video_target_extraction_quality_validated": False,
+        },
+        "release_quality_gate": {
+            "ready": False,
+            "reason": "Audio-only identity-conditioned extraction and real-world multilingual quality validation are not complete.",
+            "required_languages": ["fa-af", "ps-af", "ar", "en-us"],
+            "required_speaker_counts": [2, 3, 5, 10],
+            "requires_overlap_tests": True,
+            "requires_target_leakage_and_word_retention_metrics": True,
+            "requires_blind_listening_review": True,
+        },
+        "notice": "A model being listed does not mean its adapter is installed or its quality is validated. Diarization is not waveform separation.",
     }
 
 
