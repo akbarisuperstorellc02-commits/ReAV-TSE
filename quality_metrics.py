@@ -40,8 +40,12 @@ def si_sdr(reference: np.ndarray, estimate: np.ndarray) -> float:
     residual = est - target_projection
     target_energy = float(np.dot(target_projection, target_projection))
     residual_energy = float(np.dot(residual, residual))
-    floor = np.finfo(np.float64).tiny
-    return float(10.0 * np.log10(max(target_energy, floor) / max(residual_energy, floor)))
+    if target_energy <= np.finfo(np.float64).tiny:
+        return -300.0
+    # Relative floor avoids infinite SI-SDR for numerically perfect estimates
+    # and keeps JSON reports finite and portable.
+    residual_floor = target_energy * 1e-15
+    return float(10.0 * np.log10(target_energy / max(residual_energy, residual_floor)))
 
 
 def evaluate_separation(
