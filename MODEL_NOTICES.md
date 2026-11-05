@@ -25,5 +25,12 @@
 - Model: SpeechBrain SepFormer WSJ0-2Mix.
 - Source: https://huggingface.co/speechbrain/sepformer-wsj02mix
 - The Windows workflow downloads the model files into the installer and validates local loading.
-- This checkpoint is a two-source model at 8 kHz. It returns two estimated audio sources, not an arbitrary number of speakers, and Source 1/Source 2 are not verified speaker identities. Quality must be tested on real multilingual recordings.
+- This checkpoint is a two-source model at 8 kHz. It returns two estimated audio sources, not an arbitrary number of speakers, and Source 1/Source 2 are not verified speaker identities. The current audio-only endpoint compacts these two estimated stems by removing low-energy gaps, but this does not establish speaker identity or arbitrary-N diarization. Quality must be tested on real multilingual recordings.
 - Check the upstream model card and license before distributing builds.
+
+## Compact output post-processing
+
+- `audio_output.py` provides energy-based speech interval detection, silence-gap compaction, and a matching video-trim helper.
+- Video-mode target audio is now exported as a shorter compact WAV; the pipeline also attempts to cut and concatenate the corresponding source-video intervals and mux the compact target audio.
+- Audio-only SepFormer outputs are compacted independently. Because the bundled checkpoint is still a two-source model, the two outputs are provisional source estimates rather than confirmed people.
+- Energy-based trimming is a post-processing heuristic, not a diarization or source-separation model. Quiet speech, breath sounds, and residual noise can be misclassified; this requires evaluation and tuning on real recordings.
