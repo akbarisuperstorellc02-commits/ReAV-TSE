@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from job_pipeline import create_job, analyze_video_job, extract_job_speaker, JOBS_DIR
+from audio_output import compact_audio, detect_speech_intervals
 
 app = FastAPI(title="ReAV-TSE Multi-Job API", description="Dynamic Audio-Visual Target Speaker Extraction Backend")
 
@@ -293,12 +294,24 @@ def separate_audio(req: AnalyzeRequest):
         if data.ndim != 2 or data.shape[-1] != 2:
             raise RuntimeError("The bundled separator returned an unexpected output shape.")
         for idx in range(2):
+            compacted, intervals = compact_audio(data[:, idx], 8000)
+            if not len(compacted):
+                continue
             out = job_dir / f"speaker_{idx + 1}.wav"
-            sf.write(str(out), data[:, idx], 8000)
-            stems.append({"speaker": idx + 1, "downloadUrl": f"/api/audio/jobs/{req.job_id}/speaker/{idx + 1}"})
+            sf.write(str(out), compacted, 8000, subtype="PCM_24")
+            duration = round(len(compacted) / 8000, 3)
+            stems.append({
+                "speaker": idx + 1,
+                "duration_sec": duration,
+                "retained_intervals": [[round(a / 8000, 3), round(b / 8000, 3)] for a, b in intervals],
+                "downloadUrl": f"/api/audio/jobs/{req.job_id}/speaker/{idx + 1}"
+            })
+        if not stems:
+            raise RuntimeError("No speech activity was detected in the separated sources.")
         return {"status": "success", "job_id": req.job_id, "model": "SepFormer WSJ02Mix",
                 "separated_sources": stems, "speaker_limit": 2,
-                "notice": "Two-source separation. Source labels are not verified speaker identities."}
+                "output_mode": "compact",
+                "notice": "Compact two-source estimate. Source labels are not verified speaker identities; arbitrary speaker counts are not supported by this checkpoint."}
     except Exception as exc:
         print(f"[Audio Separation Error] {exc}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=f"Audio separation failed: {exc}")
