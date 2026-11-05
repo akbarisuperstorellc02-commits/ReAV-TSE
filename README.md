@@ -1,7 +1,7 @@
-# ReAV-TSE: Audio-Visual Target Speaker Extraction with Selective Auditory Attention
+# ReAV-TSE-BH: Audio-Visual Target Speaker Extraction with Selective Auditory Attention
 
 <p align="center">
-  <img src="frontend/src/assets/hero.png" alt="ReAV-TSE Banner" width="700"/>
+  <img src="frontend/src/assets/hero.png" alt="ReAV-TSE-BH Banner" width="700"/>
 </p>
 
 <p align="center">
@@ -17,7 +17,7 @@
 
 ## 📌 Overview
 
-**ReAV-TSE** is an end-to-end framework and full-stack platform for **Audio-Visual Target Speaker Extraction (AV-TSE)**. In challenging "cocktail party" environments with overlapping speech, background noise, and multiple visible speakers, ReAV-TSE isolates and enhances the speech of a specific individual by combining:
+**ReAV-TSE-BH** is an end-to-end framework and full-stack platform for **Audio-Visual Target Speaker Extraction (AV-TSE)**. In challenging "cocktail party" environments with overlapping speech, background noise, and multiple visible speakers, ReAV-TSE isolates and enhances the speech of a specific individual by combining:
 
 1. **Computer Vision**: Facial detection, landmark localization, and lip motion tracking.
 2. **Selective Auditory Attention**: Multi-modal fusion architectures that synchronize speech phonemes with visual lip movements to filter out interfering voices.
@@ -321,7 +321,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## Windows Desktop Application
 
-The `feature/four-language-desktop` branch contains the Windows desktop packaging work for **ReAV-TSE**.
+The `feature/four-language-desktop` branch contains the Windows desktop packaging work for **ReAV-TSE-BH**.
 
 - Windows 10/11 x64 desktop shell built with Electron.
 - React interface with English, Afghan Dari, Pashto, and Arabic language selection.
