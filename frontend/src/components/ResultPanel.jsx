@@ -19,6 +19,7 @@ export default function ResultPanel({
   const downloadUrl = (extractionData?.downloadUrl ? apiUrl(extractionData.downloadUrl) : null) || (jobId ? apiUrl(`/api/jobs/${jobId}/audio/download?person=${targetClean}`) : apiUrl('/api/audio/download'));
   const originalAudioUrl = jobId ? apiUrl(`/api/jobs/${jobId}/audio/original`) : apiUrl('/api/audio/original');
   const report = extractionData?.report;
+  const compactVideoUrl = extractionData?.videoUrl ? apiUrl(extractionData.videoUrl) : null;
 
   const handleDownload = () => {
     window.location.href = downloadUrl;
@@ -101,7 +102,7 @@ export default function ResultPanel({
           <div className="px-3.5 py-2 rounded-xl bg-surface border border-surface-border text-center">
             <div className="text-[10px] uppercase font-mono text-neutral-400">{t('totalTimeline')}</div>
             <div className="text-base font-semibold text-neutral-300 font-mono">
-              {report?.total_timeline_duration_sec ?? 0}s
+              {report?.source_duration_sec ?? report?.total_timeline_duration_sec ?? 0}s
             </div>
           </div>
 
@@ -114,6 +115,16 @@ export default function ResultPanel({
           </button>
         </div>
       </motion.div>
+
+      {compactVideoUrl && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
+          <span className="text-sm text-neutral-200">{t('compactVideoReady') || 'Shortened video with only the selected speaker'}</span>
+          <a href={compactVideoUrl} download className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white">
+            <Download className="h-4 w-4" />
+            {t('downloadCompactVideo') || 'Download compact video'}
+          </a>
+        </div>
+      )}
 
       {/* Primary Waveform Player */}
       <motion.div
