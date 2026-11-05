@@ -20,7 +20,41 @@ export default function App() {
   const [speakersData, setSpeakersData] = useState({ persons: [], tracks: [] });
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [extractionResult, setExtractionResult] = useState(null);
-  const [showHowItWorks, setShowHowItWorks] = useState(false);\n  const [showIntro, setShowIntro] = useState(true);\n  const [mediaMode, setMediaMode] = useState('video');\n  const [audioFile, setAudioFile] = useState(null);\n  const [audioBusy, setAudioBusy] = useState(false);\n  const [audioOutputs, setAudioOutputs] = useState([]);\n  const [audioNotice, setAudioNotice] = useState('');\n\n  useEffect(() => {\n    const timer = window.setTimeout(() => setShowIntro(false), 2600);\n    return () => window.clearTimeout(timer);\n  }, []);\n\n  const audioCopy = {\n    en: { video: 'Video mode', audio: 'Audio-only mode', audioTitle: 'Separate voices from audio', audioDesc: 'Choose an audio file. The offline two-source model will create two separate WAV tracks.', choose: 'Choose audio file', run: 'Separate audio', busy: 'Separating voices…', output: 'Separated audio files', note: 'Current bundled model supports two audio sources. The output labels are source 1 and source 2, not verified speaker identities.' },\n    fa: { video: 'حالت ویدیویی', audio: 'حالت فقط صوتی', audioTitle: 'جداسازی گویندگان از فایل صوتی', audioDesc: 'یک فایل صوتی انتخاب کنید. مدل آفلاین دو منبع صوتی را به دو فایل WAV جدا می‌کند.', choose: 'انتخاب فایل صوتی', run: 'جداسازی صدا', busy: 'در حال جداسازی صدا…', output: 'فایل‌های صوتی جداشده', note: 'مدل فعلی همراه برنامه دو منبع صوتی را جدا می‌کند. شماره منبع‌ها به معنی تشخیص هویت قطعی گوینده نیست.' },\n    ps: { video: 'ویډیويي حالت', audio: 'یوازې غږیز حالت', audioTitle: 'له غږیز فایل څخه د ویونکو بېلول', audioDesc: 'یو غږیز فایل وټاکئ. آفلاین ماډل دوه جلا WAV غږیزې برخې جوړوي.', choose: 'غږیز فایل وټاکئ', run: 'غږ جلا کړئ', busy: 'غږونه جلا کېږي…', output: 'جلا شوي غږیز فایلونه', note: 'اوسنی ماډل دوه غږیزې سرچینې بېلوي. د سرچینې شمېر د ویونکي تایید شوی هویت نه دی.' },\n    ar: { video: 'وضع الفيديو', audio: 'وضع الصوت فقط', audioTitle: 'فصل المتحدثين من ملف صوتي', audioDesc: 'اختر ملفاً صوتياً. سينشئ النموذج المحلي مسارين منفصلين بصيغة WAV.', choose: 'اختر ملفاً صوتياً', run: 'فصل الصوت', busy: 'جارٍ فصل الأصوات…', output: 'الملفات الصوتية المفصولة', note: 'النموذج المضمّن حالياً يفصل مصدرين صوتيين. أرقام المصادر لا تعني التحقق من هوية المتحدث.' }\n  }[language] || null;\n  const ac = audioCopy || { video: 'Video mode', audio: 'Audio-only mode', audioTitle: 'Separate voices from audio', audioDesc: 'Choose an audio file.', choose: 'Choose audio file', run: 'Separate audio', busy: 'Separating…', output: 'Separated files', note: 'Two-source model; source labels are not verified speaker identities.' };\n\n  const handleAudioSeparation = async () => {\n    if (!audioFile) return;\n    setAudioBusy(true); setAudioOutputs([]); setAudioNotice('');\n    try {\n      const form = new FormData(); form.append('file', audioFile);\n      const upload = await fetch(apiUrl('/api/audio/upload'), { method: 'POST', body: form });\n      const uploaded = await upload.json();\n      if (!upload.ok) throw new Error(uploaded.detail || 'Audio upload failed');\n      const response = await fetch(apiUrl('/api/audio/separate'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ job_id: uploaded.job_id }) });\n      const result = await response.json();\n      if (!response.ok) throw new Error(result.detail || 'Audio separation failed');\n      setAudioOutputs(result.separated_sources || []); setAudioNotice(result.notice || ac.note);\n    } catch (error) { alert(error.message); } finally { setAudioBusy(false); }\n  };
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
+  const [mediaMode, setMediaMode] = useState('video');
+  const [audioFile, setAudioFile] = useState(null);
+  const [audioBusy, setAudioBusy] = useState(false);
+  const [audioOutputs, setAudioOutputs] = useState([]);
+  const [audioNotice, setAudioNotice] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowIntro(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const audioCopy = {
+    en: { video: 'Video mode', audio: 'Audio-only mode', audioTitle: 'Separate voices from audio', audioDesc: 'Choose an audio file. The offline two-source model will create two separate WAV tracks.', choose: 'Choose audio file', run: 'Separate audio', busy: 'Separating voices…', output: 'Separated audio files', note: 'Current bundled model supports two audio sources. The output labels are source 1 and source 2, not verified speaker identities.' },
+    fa: { video: 'حالت ویدیویی', audio: 'حالت فقط صوتی', audioTitle: 'جداسازی گویندگان از فایل صوتی', audioDesc: 'یک فایل صوتی انتخاب کنید. مدل آفلاین دو منبع صوتی را به دو فایل WAV جدا می‌کند.', choose: 'انتخاب فایل صوتی', run: 'جداسازی صدا', busy: 'در حال جداسازی صدا…', output: 'فایل‌های صوتی جداشده', note: 'مدل فعلی همراه برنامه دو منبع صوتی را جدا می‌کند. شماره منبع‌ها به معنی تشخیص هویت قطعی گوینده نیست.' },
+    ps: { video: 'ویډیويي حالت', audio: 'یوازې غږیز حالت', audioTitle: 'له غږیز فایل څخه د ویونکو بېلول', audioDesc: 'یو غږیز فایل وټاکئ. آفلاین ماډل دوه جلا WAV غږیزې برخې جوړوي.', choose: 'غږیز فایل وټاکئ', run: 'غږ جلا کړئ', busy: 'غږونه جلا کېږي…', output: 'جلا شوي غږیز فایلونه', note: 'اوسنی ماډل دوه غږیزې سرچینې بېلوي. د سرچینې شمېر د ویونکي تایید شوی هویت نه دی.' },
+    ar: { video: 'وضع الفيديو', audio: 'وضع الصوت فقط', audioTitle: 'فصل المتحدثين من ملف صوتي', audioDesc: 'اختر ملفاً صوتياً. سينشئ النموذج المحلي مسارين منفصلين بصيغة WAV.', choose: 'اختر ملفاً صوتياً', run: 'فصل الصوت', busy: 'جارٍ فصل الأصوات…', output: 'الملفات الصوتية المفصولة', note: 'النموذج المضمّن حالياً يفصل مصدرين صوتيين. أرقام المصادر لا تعني التحقق من هوية المتحدث.' }
+  }[language] || null;
+  const ac = audioCopy || { video: 'Video mode', audio: 'Audio-only mode', audioTitle: 'Separate voices from audio', audioDesc: 'Choose an audio file.', choose: 'Choose audio file', run: 'Separate audio', busy: 'Separating…', output: 'Separated files', note: 'Two-source model; source labels are not verified speaker identities.' };
+
+  const handleAudioSeparation = async () => {
+    if (!audioFile) return;
+    setAudioBusy(true); setAudioOutputs([]); setAudioNotice('');
+    try {
+      const form = new FormData(); form.append('file', audioFile);
+      const upload = await fetch(apiUrl('/api/audio/upload'), { method: 'POST', body: form });
+      const uploaded = await upload.json();
+      if (!upload.ok) throw new Error(uploaded.detail || 'Audio upload failed');
+      const response = await fetch(apiUrl('/api/audio/separate'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ job_id: uploaded.job_id }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || 'Audio separation failed');
+      setAudioOutputs(result.separated_sources || []); setAudioNotice(result.notice || ac.note);
+    } catch (error) { alert(error.message); } finally { setAudioBusy(false); }
+  };
 
   useEffect(() => {
     // Restore latest active analyzed job if present
