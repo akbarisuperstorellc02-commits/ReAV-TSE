@@ -1,46 +1,51 @@
-# Target-speaker-only output behavior
+# Target-speaker-only compact output behavior
 
-## User-facing goal
+## User-facing behavior
 
-The user can choose one detected speaker (for example, their own voice) and export a track containing only that speaker. This behavior applies identically to Video Mode and Audio-only Mode. Video Mode may use visual face-to-voice association to help the user identify a speaker; the audio processing and output semantics remain shared.
+The user selects one detected speaker (for example, their own voice). The exported result contains only that speaker's speech. This applies to Video Mode and Audio-only Mode.
 
-## Required timeline semantics
+**Compact mode is the required default.** Non-target speech, unwanted sound and the silent gaps left after their removal are deleted from the output timeline. The retained target-speech portions are concatenated in order into a shorter file. Original duration and synchronization with the source are not required.
 
-- Preserve the original recording's full duration and timeline alignment. Do not close gaps or shift later speech earlier.
-- When the selected speaker is not speaking, write digital silence for that interval. Do not leave another speaker, music, effects, room tone, or environmental noise in the selected speaker's output.
-- When another speaker talks alone, that interval must be silent in the selected speaker's output.
-- When the selected speaker talks alone, retain only the selected speaker's voice.
-- During overlapping speech, extract the selected speaker while suppressing the other speaker(s). If reliable extraction is not possible, mark the interval as uncertain / low confidence and prefer conservative suppression over leaking a clearly different speaker into the selected stem.
-- If the selected speaker is silent while other speakers overlap, output silence.
-- Do not shorten the file by deleting time ranges. "Delete" means remove the unwanted sound content and replace that time range with silence, preserving synchronization with video and other tracks.
+## Required output semantics
+
+- Keep only the selected speaker's voice; suppress other speakers, music, effects and background noise as far as the validated extraction model permits.
+- Remove non-target-only intervals completely.
+- Trim leading, trailing and inter-segment silence from the retained target stem, then concatenate retained speech portions without leaving the original gaps.
+- Preserve chronological order and apply short boundary fades only to prevent clicks.
+- In Video Mode, cut the source video to the same retained time intervals, concatenate those picture segments in the same order, and mux the compact target-speaker audio. The exported video is shorter; it is not required to remain synchronized to the original timeline.
+- Audio-only Mode exports the same compacted speech-only WAV without requiring any video.
+- Keep an edit-decision list containing original source start/end times for each retained interval so the user can inspect how the compact file was assembled.
+- If no reliable target speech is found, return a clear error rather than an empty or misleading success.
 
 ## Clean, natural voice requirements
 
-- Suppress non-selected speakers, music, TV/radio, sound effects, and environmental noise (wind, fan, hiss, crowd) as far as validated models can do so.
-- Reduce room reverberation where possible without creating metallic, watery, gated, or robotic artifacts.
-- Preserve the selected speaker's natural timbre, pitch, consonants, syllables, intelligibility, and dynamics.
-- Do not add creative effects, echo, artificial reverb, pitch shifting, or unnecessary EQ/compression.
-- Avoid aggressive denoising that removes quiet words, breaths that are part of speech, or word endings.
-- Keep silence genuinely silent; do not fill it with residual background noise.
-- Provide a high-quality lossless WAV export by default where practical. Preserve source timing and avoid unnecessary downmixing or low-rate conversion in the final export. Internal model resampling must be handled explicitly and restored carefully.
+- Reduce competing speakers, music, TV/radio, sound effects, wind, fan noise, hiss, crowd noise and room reverberation where validated models can do so.
+- Preserve natural timbre, pitch, consonants, syllables, intelligibility and dynamics.
+- Do not add creative effects, echo, artificial reverb, pitch shifting, robotic processing or unnecessary EQ/compression.
+- Avoid aggressive denoising that removes quiet words, breaths that belong to speech, or word endings.
+- Use high-quality lossless WAV for speaker audio by default. Preserve source sample rate and channels in the exported stem where supported; internal model resampling must be restored carefully.
 
-## Shared processing architecture
+## Processing architecture
 
-1. Detect speech activity, estimate the number of speakers, assign stable anonymous speaker IDs, and detect overlapping speech.
-2. Let the user identify the target speaker using auditionable samples and, in Video Mode where available, face-to-voice association.
-3. Run speaker-conditioned, overlap-aware extraction for the selected identity. Do not treat a fixed two-output separator as arbitrary-N speaker separation, and do not label anonymous source channels as verified people.
-4. Apply conservative speech cleanup (noise/music suppression and dereverberation) to the selected stem, with artifact checks.
-5. Apply a target-speaker activity mask so intervals with no target speech become digital silence. Use short boundary fades only to prevent clicks; do not alter timing.
-6. Run quality checks for residual other-speaker leakage, speech distortion, clipping, missing syllables, and unexpected non-silent gaps. Flag uncertain regions instead of claiming perfect extraction.
+1. Detect speech activity, estimate the number of speakers, assign anonymous speaker IDs and identify overlapping speech.
+2. Let the user identify the target using auditionable voice samples. In Video Mode, use face-to-voice association as an additional cue, not as the sole source of speaker identity.
+3. Run speaker-conditioned, overlap-aware extraction. A fixed two-output model must never be described as arbitrary-N diarization or verified identity separation.
+4. Apply conservative cleanup and evaluate residual interference and speech distortion.
+5. Detect target speech intervals on the extracted stem, trim non-speech gaps, and concatenate the retained intervals.
+6. For video, use the exact same source intervals to cut and concatenate picture segments, then mux the compacted target audio.
+7. Preserve an edit-decision list and run checks for clipping, empty output, missing speech and duration consistency.
 
 ## Validation requirements
 
-- Test both Video Mode and Audio-only Mode with target-only speech, other-speaker-only speech, alternating turns, overlapping turns, music/effects, environmental noise, and reverberant rooms.
-- Include Afghan Dari, Pashto, Arabic, and English recordings, including overlap-heavy examples.
-- Evaluate diarization and overlap detection (for example DER/JER), separation quality (for example SI-SDR/SI-SDRi where references exist), speech intelligibility, leakage, and human listening.
-- Verify that output duration and timestamps remain aligned with the original.
-- No claim of perfect or guaranteed separation: heavily overlapping or acoustically ambiguous speech may require a low-confidence warning or manual review.
+Test both modes using target-only speech, other-speaker-only speech, alternating turns, overlapping turns, music/effects, environmental noise and reverberant rooms. Include Afghan Dari, Pashto, Arabic and English, including overlap-heavy samples.
 
-## Current implementation warning
+Evaluate diarization/overlap detection (DER/JER), separation (SI-SDR/SI-SDRi where references exist), intelligibility, leakage and human listening. Verify that compact audio and video contain the same retained intervals in the same order.
 
-The existing SpeechBrain SepFormer WSJ0-2Mix checkpoint is a two-source, 8 kHz model and is not a valid final implementation of automatic-N, identity-conditioned target-speaker extraction. It may remain only as an explicitly experimental path until replaced and evaluated. The existing AV target-speaker path also needs to be validated against the same target-only silence and clean-voice requirements.
+No model can guarantee perfect separation in every recording. Flag uncertain segments and avoid claiming unlimited speakers or perfect purity without measured evidence.
+
+## Current implementation status and known limitations
+
+- SpeechBrain SepFormer WSJ0-2Mix is a two-source, 8 kHz checkpoint. It is not an arbitrary-N, identity-conditioned separator and is not sufficient as the final general-purpose Audio-only engine.
+- AV-MossFormer2 is a visual target-speaker extraction model. Its current use must be validated for speaker identity, overlap and clean compact exports.
+- The compact-output helper is a post-processing utility, not a substitute for a capable diarization and speaker-conditioned separation model. Energy-based silence trimming can misclassify quiet speech or residual noise; it must be tested and tuned against real recordings.
+- Full offline distribution requires every selected model weight and dependency to be bundled and license-checked.
