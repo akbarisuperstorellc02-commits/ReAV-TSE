@@ -275,6 +275,36 @@ async def upload_audio(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="The selected audio file is empty.")
     return {"job_id": audio_dir.name, "filename": file.filename, "status": "uploaded"}
 
+@app.get("/api/models")
+def get_model_status():
+    """Show local model readiness and their supported roles without downloading weights."""
+    from speaker_models import model_status
+    return model_status()
+
+
+@app.post("/api/audio/diarize")
+def diarize_uploaded_audio(req: AnalyzeRequest):
+    """Run local speaker diarization; this endpoint does not claim to separate voices."""
+    job_dir = DATA_DIR / "audio_jobs" / req.job_id
+    if not job_dir.exists():
+        raise HTTPException(status_code=404, detail="Audio job not found.")
+    candidates = [p for p in job_dir.iterdir() if p.is_file() and p.name.startswith("source")]
+    if not candidates:
+        raise HTTPException(status_code=404, detail="Uploaded source audio was not found.")
+    try:
+        from speaker_models import diarize_audio_file
+        result = diarize_audio_file(candidates[0])
+        result["job_id"] = req.job_id
+        with open(job_dir / "diarization.json", "w", encoding="utf-8") as handle:
+            json.dump(result, handle, indent=2, ensure_ascii=False)
+        return result
+    except (RuntimeError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception as exc:
+        print(f"[Diarization Error] {exc}", file=sys.stderr)
+        raise HTTPException(status_code=500, detail=f"Diarization failed: {exc}")
+
+
 @app.post("/api/audio/separate")
 def separate_audio(req: AnalyzeRequest):
     job_dir = DATA_DIR / "audio_jobs" / req.job_id
