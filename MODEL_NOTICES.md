@@ -48,3 +48,11 @@
 - `tools/benchmark_speaker_output.py` measures aligned target SI-SDR and SI-SDR improvement, with an optional interferer-to-target projection leakage diagnostic.
 - Run the benchmark on full-timeline stems before silence removal. It intentionally rejects compacted or misaligned files. SI-SDR and the leakage proxy do not replace listening tests or prove speaker identity.
 - The current workflow's unit-test step exercises the benchmark's metric and alignment checks.
+
+## ReAV-TSE local model registry and diarization endpoint
+
+The desktop backend now exposes `GET /api/models` to report local checkpoint presence and model roles without downloading anything. It also exposes `POST /api/audio/diarize` for optional local pyannote diarization when `pyannote.audio` and a previously downloaded, approved Community-1 model directory are installed and configured with `REAV_PYANNOTE_MODEL`.
+
+The diarization endpoint returns speaker turns and concurrent overlap intervals. It explicitly reports `waveform_separation_performed: false`: diarization is not audio extraction. The app does not fetch gated model weights, request a token, or contact a cloud service during processing.
+
+Falcon-Big, SpEx+, and Nemotron are represented in the model registry with their correct task roles and readiness states. A checkpoint path alone is not treated as a working adapter. Falcon and SpEx+ still require verified inference adapters and end-to-end quality tests; Nemotron remains an optional secondary diarization candidate and is not treated as an unlimited-speaker engine. The current SepFormer and AV-MossFormer2 baselines remain unchanged until candidates pass the acceptance gates in `AUDIO_ENGINE_UPGRADE.md`.
