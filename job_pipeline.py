@@ -16,7 +16,7 @@ from scipy import signal
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
-from audio_output import compact_audio
+from audio_output import compact_audio, compact_video_to_intervals
 
 from clearvoice.utils.video_process import track_shot
 import clearvoice.models.av_mossformer2_tse.av_mossformer2 as av_module
@@ -534,6 +534,16 @@ def extract_job_speaker(job_id: str, target: str, mode: str = "person"):
     out_file = job_dir / f"target_speaker_{target_str}.wav"
     sf.write(str(out_file), compacted, sr, subtype="PCM_24")
 
+    compact_video = job_dir / f"target_video_{target_str}.mp4"
+    video_export = None
+    try:
+        import imageio_ffmpeg
+        retained_seconds = [[a / sr, b / sr] for a, b in retained_intervals]
+        compact_video_to_intervals(video_file, compact_video, retained_seconds, out_file, imageio_ffmpeg.get_ffmpeg_exe())
+        video_export = compact_video.name
+    except Exception as video_exc:
+        print(f"[Compact Video Export Warning] {video_exc}", file=sys.stderr)
+
     active_sec = round(len(compacted) / sr, 2)
     silence_sec = 0.0
 
@@ -545,6 +555,7 @@ def extract_job_speaker(job_id: str, target: str, mode: str = "person"):
         "output_duration_sec": active_sec,
         "removed_duration_sec": round(max(0.0, total_duration - active_sec), 2),
         "output_mode": "compact",
+        "video_export": video_export,
         "retained_intervals_seconds": [[round(a / sr, 4), round(b / sr, 4)] for a, b in retained_intervals],
         "active_speech_duration_sec": active_sec,
         "silence_duration_sec": silence_sec,
