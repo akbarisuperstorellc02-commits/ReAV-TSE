@@ -133,6 +133,47 @@ def _get_local_pyannote_pipeline():
     return pipeline
 
 
+def find_speaker_overlaps(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return pairwise cross-speaker overlap intervals from diarization turns.
+
+    Input is sorted defensively. Same-speaker overlaps and touching boundaries
+    are excluded. A sweep-line active set avoids comparing turns that have
+    already ended; output remains deterministic for repeatable UI/tests.
+    """
+    normalized = []
+    for item in segments:
+        try:
+            start = float(item["start"])
+            end = float(item["end"])
+            speaker = str(item["speaker"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("Each diarization segment needs numeric start/end and a speaker label.") from exc
+        if not (start >= 0.0 and end > start and start < float("inf") and end < float("inf")):
+            raise ValueError("Diarization segment times must be finite, non-negative, and end after start.")
+        normalized.append({"start": start, "end": end, "speaker": speaker})
+
+    normalized.sort(key=lambda item: (item["start"], item["end"], item["speaker"]))
+    active: list[dict[str, Any]] = []
+    overlaps = []
+    for current in normalized:
+        active = [item for item in active if item["end"] > current["start"]]
+        for previous in active:
+            if previous["speaker"] == current["speaker"]:
+                continue
+            start = max(previous["start"], current["start"])
+            end = min(previous["end"], current["end"])
+            if end > start:
+                overlaps.append({
+                    "start": round(start, 4),
+                    "end": round(end, 4),
+                    "speakers": sorted([previous["speaker"], current["speaker"]]),
+                })
+        active.append(current)
+
+    overlaps.sort(key=lambda item: (item["start"], item["end"], item["speakers"]))
+    return overlaps
+
+
 def diarize_audio_file(audio_path: str | Path) -> dict[str, Any]:
     """Run local Community-1 diarization and report turns plus concurrent overlaps."""
     path = Path(audio_path)
@@ -153,20 +194,7 @@ def diarize_audio_file(audio_path: str | Path) -> dict[str, Any]:
         })
     segments.sort(key=lambda x: (x["start"], x["end"], x["speaker"]))
 
-    overlaps = []
-    for i, left in enumerate(segments):
-        for right in segments[i + 1:]:
-            if right["start"] >= left["end"]:
-                break
-            if left["speaker"] != right["speaker"]:
-                start = max(left["start"], right["start"])
-                end = min(left["end"], right["end"])
-                if end > start:
-                    overlaps.append({
-                        "start": round(start, 4),
-                        "end": round(end, 4),
-                        "speakers": [left["speaker"], right["speaker"]],
-                    })
+    overlaps = find_speaker_overlaps(segments)
 
     speakers = sorted({item["speaker"] for item in segments})
     return {
