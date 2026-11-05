@@ -203,7 +203,7 @@ export default function App() {
               className="relative w-24 h-24 rounded-[28px] border border-violet-300/30 bg-gradient-to-br from-violet-500/30 to-cyan-400/10 shadow-[0_0_70px_rgba(139,92,246,0.3)] flex items-center justify-center text-violet-200">
               <AudioWaveform className="w-12 h-12" />
             </motion.div>
-            <motion.h1 initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }} className="relative mt-7 text-3xl font-bold tracking-[0.18em] text-white">ReAV-TSE</motion.h1>
+            <motion.h1 initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }} className="relative mt-7 text-3xl font-bold tracking-[0.18em] text-white">ReAV-TSE-BH</motion.h1>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="relative mt-2 text-xs tracking-[0.22em] uppercase text-violet-200/60">AI Audio · Visual Separation</motion.p>
             <div className="relative flex items-center gap-1.5 mt-8 h-8">{Array.from({ length: 25 }).map((_, i) => <motion.span key={i} className="w-1 rounded-full bg-gradient-to-t from-violet-600 to-cyan-300" animate={{ height: [7, 12 + ((i * 13) % 23), 7], opacity: [0.35, 1, 0.35] }} transition={{ duration: 0.55 + (i % 5) * 0.12, repeat: Infinity, delay: i * 0.025 }} />)}</div>
             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="relative mt-8 text-[10px] tracking-widest text-neutral-500">INITIALIZING OFFLINE AI ENGINE</motion.span>
@@ -224,7 +224,7 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold font-display tracking-tight text-white text-base">ReAV-TSE</span>
+                <span className="font-bold font-display tracking-tight text-white text-base">ReAV-TSE-BH</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent-muted text-lavender-300 border border-accent/20">
                   {jobId ? jobId.slice(0, 14) : t('multiJobAI')}
                 </span>
