@@ -4,6 +4,7 @@ import json
 import time
 import shutil
 import uuid
+import re
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -245,6 +246,28 @@ def get_legacy_original_audio():
 AUDIO_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".aac"}
 _AUDIO_MODEL = None
 
+
+def _get_audio_job_dir(job_id: str) -> Path:
+    """Resolve only server-generated UUID job folders; reject traversal and malformed IDs."""
+    if not isinstance(job_id, str) or not re.fullmatch(r"[0-9a-f]{32}", job_id):
+        raise HTTPException(status_code=404, detail="Audio job not found.")
+    root = (DATA_DIR / "audio_jobs").resolve()
+    job_dir = (root / job_id).resolve()
+    if job_dir.parent != root or not job_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Audio job not found.")
+    return job_dir
+
+
+def _find_uploaded_audio(job_dir: Path) -> Path:
+    """Find the original upload for every supported extension deterministically."""
+    candidates = sorted(
+        p for p in job_dir.iterdir()
+        if p.is_file() and p.stem == "source" and p.suffix.lower() in AUDIO_EXTS
+    )
+    if not candidates:
+        raise HTTPException(status_code=404, detail="Uploaded source audio was not found.")
+    return candidates[0]
+
 def _get_audio_separator():
     global _AUDIO_MODEL
     if _AUDIO_MODEL is None:
@@ -285,15 +308,11 @@ def get_model_status():
 @app.post("/api/audio/diarize")
 def diarize_uploaded_audio(req: AnalyzeRequest):
     """Run local speaker diarization; this endpoint does not claim to separate voices."""
-    job_dir = DATA_DIR / "audio_jobs" / req.job_id
-    if not job_dir.exists():
-        raise HTTPException(status_code=404, detail="Audio job not found.")
-    candidates = [p for p in job_dir.iterdir() if p.is_file() and p.name.startswith("source")]
-    if not candidates:
-        raise HTTPException(status_code=404, detail="Uploaded source audio was not found.")
+    job_dir = _get_audio_job_dir(req.job_id)
+    source = _find_uploaded_audio(job_dir)
     try:
         from speaker_models import diarize_audio_file
-        result = diarize_audio_file(candidates[0])
+        result = diarize_audio_file(source)
         result["job_id"] = req.job_id
         with open(job_dir / "diarization.json", "w", encoding="utf-8") as handle:
             json.dump(result, handle, indent=2, ensure_ascii=False)
@@ -307,17 +326,12 @@ def diarize_uploaded_audio(req: AnalyzeRequest):
 
 @app.post("/api/audio/separate")
 def separate_audio(req: AnalyzeRequest):
-    job_dir = DATA_DIR / "audio_jobs" / req.job_id
-    if not job_dir.exists():
-        raise HTTPException(status_code=404, detail="Audio job not found.")
-    source_files = [p for p in job_dir.iterdir() if p.is_file() and p.name.startswith("source.")]
-    if not source_files:
-        raise HTTPException(status_code=404, detail="Uploaded audio file not found.")
+    job_dir = _get_audio_job_dir(req.job_id)
+    source = _find_uploaded_audio(job_dir)
     try:
         import imageio_ffmpeg
         import numpy as np
         import soundfile as sf
-        source = source_files[0]
         normalized = job_dir / "normalized_8k.wav"
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
         import subprocess
@@ -367,8 +381,9 @@ def separate_audio(req: AnalyzeRequest):
 def download_audio_speaker(job_id: str, speaker_id: int):
     if speaker_id not in (1, 2):
         raise HTTPException(status_code=404, detail="Speaker output not found.")
-    path = DATA_DIR / "audio_jobs" / job_id / f"speaker_{speaker_id}.wav"
-    if not path.exists():
+    job_dir = _get_audio_job_dir(job_id)
+    path = job_dir / f"speaker_{speaker_id}.wav"
+    if not path.is_file():
         raise HTTPException(status_code=404, detail="Speaker output is not ready.")
     return FileResponse(path, media_type="audio/wav", filename=f"ReAV_TSE_{job_id}_source_{speaker_id}.wav")
 
