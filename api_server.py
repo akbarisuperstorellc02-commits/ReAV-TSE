@@ -179,6 +179,7 @@ def extract_speaker(req: ExtractJobRequest):
             "targetName": report.get("target_name", req.target),
             "audioUrl": f"/api/jobs/{req.job_id}/audio/target?person={target_clean}&t={int(time.time()*1000)}",
             "downloadUrl": f"/api/jobs/{req.job_id}/audio/download?person={target_clean}",
+            "videoUrl": f"/api/jobs/{req.job_id}/video/compact?person={target_clean}" if report.get("video_export") else None,
             "report": report
         }
     except ValueError as e:
@@ -186,6 +187,15 @@ def extract_speaker(req: ExtractJobRequest):
     except Exception as e:
         print(f"[Extract Error] {e}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=f"Extraction failed: {str(e)}")
+
+@app.get("/api/jobs/{job_id}/video/compact")
+def get_job_compact_video(job_id: str, person: str = "person1"):
+    clean_p = person.strip().lower()
+    path = JOBS_DIR / job_id / f"target_video_{clean_p}.mp4"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Compact target-speaker video is not available.")
+    return FileResponse(path, media_type="video/mp4", filename=f"ReAV_TSE_{job_id}_{clean_p}_compact.mp4")
+
 
 @app.get("/api/jobs/{job_id}/audio/target")
 def get_job_target_audio(job_id: str, person: str = "person1"):
