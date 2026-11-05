@@ -192,6 +192,7 @@ export default function App() {
   };
 
   return (
+    <>
       <AnimatePresence>
         {showIntro && (
           <motion.div key="intro" className="fixed inset-0 z-[100] bg-[#08080d] flex flex-col items-center justify-center overflow-hidden"
