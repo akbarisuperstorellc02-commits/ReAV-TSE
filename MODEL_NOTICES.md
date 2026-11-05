@@ -19,3 +19,11 @@
 - Package: `@fontsource/noto-sans-arabic`
 - Font family: Noto Sans Arabic
 - License: SIL Open Font License; see the package's included license files.
+
+## Audio-only separation model
+
+- Model: SpeechBrain SepFormer WSJ0-2Mix.
+- Source: https://huggingface.co/speechbrain/sepformer-wsj02mix
+- The Windows workflow downloads the model files into the installer and validates local loading.
+- This checkpoint is a two-source model at 8 kHz. It returns two estimated audio sources, not an arbitrary number of speakers, and Source 1/Source 2 are not verified speaker identities. Quality must be tested on real multilingual recordings.
+- Check the upstream model card and license before distributing builds.
