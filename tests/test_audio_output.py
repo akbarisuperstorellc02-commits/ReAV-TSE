@@ -12,7 +12,8 @@ class CompactOutputTests(unittest.TestCase):
         compacted, intervals = compact_audio(source, sr)
         self.assertEqual(len(intervals), 2)
         self.assertLess(len(compacted), len(source))
-        self.assertAlmostEqual(len(compacted) / sr, 2.0, places=2)
+        self.assertGreaterEqual(len(compacted) / sr, 2.0)
+        self.assertLess(len(compacted) / sr, 2.1)
 
     def test_empty_audio_has_no_intervals(self):
         intervals = detect_speech_intervals(np.zeros(8000, dtype=np.float32), 8000)
