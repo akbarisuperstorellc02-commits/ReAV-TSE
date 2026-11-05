@@ -25,7 +25,9 @@ class CompactOutputTests(unittest.TestCase):
             audio, 10, intervals=[(10, 15), (2, 8), (6, 12), (-5, 1), (18, 40)]
         )
         self.assertEqual(intervals, [(0, 1), (2, 15), (18, 20)])
-        np.testing.assert_array_equal(compacted, np.concatenate([audio[0:1], audio[2:15], audio[18:20]]))
+        expected = np.concatenate([audio[0:1], audio[2:15], audio[18:20]])[:, None]
+        self.assertEqual(compacted.shape, (16, 1))
+        np.testing.assert_array_equal(compacted, expected)
 
     def test_duplicate_intervals_do_not_duplicate_audio(self):
         audio = np.arange(10, dtype=np.float32)
