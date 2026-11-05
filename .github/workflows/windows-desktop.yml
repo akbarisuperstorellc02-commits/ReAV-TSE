@@ -48,6 +48,7 @@ jobs:
           $pointer = (Get-Content 'backend/model_cache/checkpoints/AV_MossFormer2_TSE_16K/last_best_checkpoint' -Raw).Trim()
           if ($pointer -ne 'last_best_checkpoint.pt') { throw "Unexpected AV-MossFormer2 checkpoint pointer: $pointer" }
           python -c "import torch; torch.hub.load_state_dict_from_url('https://download.pytorch.org/models/resnet18-f37072fd.pth', model_dir='backend/model_cache/torch_cache/hub/checkpoints', progress=True)"
+          python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='speechbrain/sepformer-wsj02mix', local_dir='backend/model_cache/audio_models/sepformer-wsj02mix')"
       - name: Validate bundled pretrained model weights
         shell: pwsh
         run: |
@@ -58,7 +59,7 @@ jobs:
       - name: Package Python backend
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onedir --name reav_backend --distpath backend/dist --workpath backend/build --add-data 'yunet.onnx;.' --collect-all clearvoice --collect-all torch --collect-all torchvision --collect-all cv2 --collect-all imageio_ffmpeg --collect-all soundfile --collect-all scipy --collect-all torchaudio --collect-all huggingface_hub --hidden-import uvicorn.logging --hidden-import uvicorn.loops --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols --hidden-import uvicorn.protocols.http --hidden-import uvicorn.protocols.websockets --hidden-import uvicorn.lifespan --hidden-import uvicorn.lifespan.on --hidden-import multipart --hidden-import fastapi desktop_backend.py
+          python -m PyInstaller --noconfirm --clean --onedir --name reav_backend --distpath backend/dist --workpath backend/build --add-data 'yunet.onnx;.' --collect-all clearvoice --collect-all torch --collect-all torchvision --collect-all cv2 --collect-all imageio_ffmpeg --collect-all soundfile --collect-all scipy --collect-all torchaudio --collect-all huggingface_hub --collect-all speechbrain --collect-all hyperpyyaml --hidden-import speechbrain.inference.separation --hidden-import uvicorn.logging --hidden-import uvicorn.loops --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols --hidden-import uvicorn.protocols.http --hidden-import uvicorn.protocols.websockets --hidden-import uvicorn.lifespan --hidden-import uvicorn.lifespan.on --hidden-import multipart --hidden-import fastapi desktop_backend.py
       - name: Smoke-test packaged FastAPI executable
         shell: pwsh
         run: |
