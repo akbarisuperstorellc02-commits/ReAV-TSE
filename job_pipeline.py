@@ -16,6 +16,7 @@ from scipy import signal
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
+from audio_output import compact_audio
 
 from clearvoice.utils.video_process import track_shot
 import clearvoice.models.av_mossformer2_tse.av_mossformer2 as av_module
@@ -527,18 +528,24 @@ def extract_job_speaker(job_id: str, target: str, mode: str = "person"):
     if max_val > 0.95:
         timeline = timeline * (0.95 / max_val)
 
+    compacted, retained_intervals = compact_audio(timeline, sr)
+    if not len(compacted):
+        raise ValueError("No reliable target speech was detected for the selected speaker.")
     out_file = job_dir / f"target_speaker_{target_str}.wav"
-    sf.write(str(out_file), timeline, sr)
+    sf.write(str(out_file), compacted, sr, subtype="PCM_24")
 
-    active_mask = np.abs(timeline) > 1e-4
-    active_sec = round(float(np.sum(active_mask) / sr), 2)
-    silence_sec = round(total_duration - active_sec, 2)
+    active_sec = round(len(compacted) / sr, 2)
+    silence_sec = 0.0
 
     report = {
         "job_id": job_id,
         "target": target_str,
         "target_name": target_name,
-        "total_timeline_duration_sec": round(total_duration, 2),
+        "source_duration_sec": round(total_duration, 2),
+        "output_duration_sec": active_sec,
+        "removed_duration_sec": round(max(0.0, total_duration - active_sec), 2),
+        "output_mode": "compact",
+        "retained_intervals_seconds": [[round(a / sr, 4), round(b / sr, 4)] for a, b in retained_intervals],
         "active_speech_duration_sec": active_sec,
         "silence_duration_sec": silence_sec,
         "num_segments_combined": len(combined_segments),
