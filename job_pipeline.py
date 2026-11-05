@@ -16,7 +16,7 @@ from scipy import signal
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
-from audio_output import compact_audio, compact_video_to_intervals
+from audio_output import compact_audio, compact_video_to_intervals, restore_estimate_scale
 
 from clearvoice.utils.video_process import track_shot
 import clearvoice.models.av_mossformer2_tse.av_mossformer2 as av_module
@@ -480,22 +480,24 @@ def extract_job_speaker(job_id: str, target: str, mode: str = "person"):
             else:
                 visual = visual[:req_visual_len]
 
-            audio_max = np.max(np.abs(audio_seg))
-            if audio_max > 0:
-                audio_seg /= audio_max
+            # Preserve the segment's original gain so separate utterances do
+            # not all become equally loud after model inference.
+            audio_peak = float(np.max(np.abs(audio_seg)))
+            if not np.isfinite(audio_peak) or audio_peak <= 1e-8:
+                continue
+            normalized_audio = audio_seg / audio_peak
 
-            audio_in = np.expand_dims(audio_seg, axis=0)
+            audio_in = np.expand_dims(normalized_audio, axis=0)
             visual_in = np.expand_dims(visual, axis=0)
 
             from clearvoice.utils.decode import decode_one_audio_AV_MossFormer2_TSE_16K
             with torch.inference_mode():
                 est_audio = decode_one_audio_AV_MossFormer2_TSE_16K(model, (audio_in, visual_in), args)
 
-            max_est = np.max(np.abs(est_audio))
-            if max_est > 0:
-                est_audio = est_audio / max_est
-
-            sf.write(str(track_wav), est_audio, 16000)
+            # Fail safely if the model changes the segment duration beyond a
+            # tiny codec/decoder tolerance; never silently shift the timeline.
+            est_audio = restore_estimate_scale(est_audio, normalized_audio, sr)
+            sf.write(str(track_wav), est_audio, sr)
         else:
             est_audio, _ = sf.read(str(track_wav), dtype='float32')
 
