@@ -35,7 +35,8 @@ function startBackend() {
       ...process.env,
       REAV_API_PORT: String(API_PORT),
       REAV_DATA_DIR: path.join(app.getPath('userData'), 'data'),
-      TORCH_HOME: path.join(process.resourcesPath, 'torch_cache')
+      TORCH_HOME: path.join(process.resourcesPath, 'torch_cache'),
+      REAV_AUDIO_MODEL_DIR: path.join(process.resourcesPath, 'audio_models', 'sepformer-wsj02mix')
     },
     windowsHide: true,
     stdio: 'ignore'
