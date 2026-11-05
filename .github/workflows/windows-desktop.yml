@@ -55,6 +55,7 @@ jobs:
           $env:TORCH_HOME = (Resolve-Path 'backend/model_cache/torch_cache').Path
           $env:REAV_DATA_DIR = (Join-Path $env:RUNNER_TEMP 'reav-model-validation')
           python -c "import os,sys; sys.path.insert(0, os.path.abspath('.')); os.chdir('backend/model_cache'); from job_pipeline import get_resnet_embedder, get_clearvoice_model; get_resnet_embedder(); model,args=get_clearvoice_model(); print('RESNET_AND_AV_MOSSFORMER2_MODEL_LOAD_OK', type(model).__name__, args.device)"
+          python -c "from speechbrain.inference.separation import SepformerSeparation; m=SepformerSeparation.from_hparams(source='backend/model_cache/audio_models/sepformer-wsj02mix', savedir='backend/model_cache/audio_models/sepformer-wsj02mix', run_opts={'device':'cpu'}); print('OFFLINE_SEPFORMER_MODEL_LOAD_OK', type(m).__name__)"
 
       - name: Package Python backend
         shell: pwsh
