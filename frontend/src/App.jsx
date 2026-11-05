@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Layers, ArrowLeft, Cpu, ExternalLink, HelpCircle } from 'lucide-react';
+import { Sparkles, Layers, ArrowLeft, Cpu, ExternalLink, HelpCircle, Headphones, Video, AudioWaveform } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import UploadZone from './components/UploadZone';
@@ -20,7 +20,7 @@ export default function App() {
   const [speakersData, setSpeakersData] = useState({ persons: [], tracks: [] });
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [extractionResult, setExtractionResult] = useState(null);
-  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);\n  const [showIntro, setShowIntro] = useState(true);\n  const [mediaMode, setMediaMode] = useState('video');\n  const [audioFile, setAudioFile] = useState(null);\n  const [audioBusy, setAudioBusy] = useState(false);\n  const [audioOutputs, setAudioOutputs] = useState([]);\n  const [audioNotice, setAudioNotice] = useState('');\n\n  useEffect(() => {\n    const timer = window.setTimeout(() => setShowIntro(false), 2600);\n    return () => window.clearTimeout(timer);\n  }, []);\n\n  const audioCopy = {\n    en: { video: 'Video mode', audio: 'Audio-only mode', audioTitle: 'Separate voices from audio', audioDesc: 'Choose an audio file. The offline two-source model will create two separate WAV tracks.', choose: 'Choose audio file', run: 'Separate audio', busy: 'Separating voices…', output: 'Separated audio files', note: 'Current bundled model supports two audio sources. The output labels are source 1 and source 2, not verified speaker identities.' },\n    fa: { video: 'حالت ویدیویی', audio: 'حالت فقط صوتی', audioTitle: 'جداسازی گویندگان از فایل صوتی', audioDesc: 'یک فایل صوتی انتخاب کنید. مدل آفلاین دو منبع صوتی را به دو فایل WAV جدا می‌کند.', choose: 'انتخاب فایل صوتی', run: 'جداسازی صدا', busy: 'در حال جداسازی صدا…', output: 'فایل‌های صوتی جداشده', note: 'مدل فعلی همراه برنامه دو منبع صوتی را جدا می‌کند. شماره منبع‌ها به معنی تشخیص هویت قطعی گوینده نیست.' },\n    ps: { video: 'ویډیويي حالت', audio: 'یوازې غږیز حالت', audioTitle: 'له غږیز فایل څخه د ویونکو بېلول', audioDesc: 'یو غږیز فایل وټاکئ. آفلاین ماډل دوه جلا WAV غږیزې برخې جوړوي.', choose: 'غږیز فایل وټاکئ', run: 'غږ جلا کړئ', busy: 'غږونه جلا کېږي…', output: 'جلا شوي غږیز فایلونه', note: 'اوسنی ماډل دوه غږیزې سرچینې بېلوي. د سرچینې شمېر د ویونکي تایید شوی هویت نه دی.' },\n    ar: { video: 'وضع الفيديو', audio: 'وضع الصوت فقط', audioTitle: 'فصل المتحدثين من ملف صوتي', audioDesc: 'اختر ملفاً صوتياً. سينشئ النموذج المحلي مسارين منفصلين بصيغة WAV.', choose: 'اختر ملفاً صوتياً', run: 'فصل الصوت', busy: 'جارٍ فصل الأصوات…', output: 'الملفات الصوتية المفصولة', note: 'النموذج المضمّن حالياً يفصل مصدرين صوتيين. أرقام المصادر لا تعني التحقق من هوية المتحدث.' }\n  }[language] || null;\n  const ac = audioCopy || { video: 'Video mode', audio: 'Audio-only mode', audioTitle: 'Separate voices from audio', audioDesc: 'Choose an audio file.', choose: 'Choose audio file', run: 'Separate audio', busy: 'Separating…', output: 'Separated files', note: 'Two-source model; source labels are not verified speaker identities.' };\n\n  const handleAudioSeparation = async () => {\n    if (!audioFile) return;\n    setAudioBusy(true); setAudioOutputs([]); setAudioNotice('');\n    try {\n      const form = new FormData(); form.append('file', audioFile);\n      const upload = await fetch(apiUrl('/api/audio/upload'), { method: 'POST', body: form });\n      const uploaded = await upload.json();\n      if (!upload.ok) throw new Error(uploaded.detail || 'Audio upload failed');\n      const response = await fetch(apiUrl('/api/audio/separate'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ job_id: uploaded.job_id }) });\n      const result = await response.json();\n      if (!response.ok) throw new Error(result.detail || 'Audio separation failed');\n      setAudioOutputs(result.separated_sources || []); setAudioNotice(result.notice || ac.note);\n    } catch (error) { alert(error.message); } finally { setAudioBusy(false); }\n  };
 
   useEffect(() => {
     // Restore latest active analyzed job if present
@@ -158,6 +158,23 @@ export default function App() {
   };
 
   return (
+      <AnimatePresence>
+        {showIntro && (
+          <motion.div key="intro" className="fixed inset-0 z-[100] bg-[#08080d] flex flex-col items-center justify-center overflow-hidden"
+            initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.025 }} transition={{ duration: 0.65 }}>
+            <motion.div className="absolute w-[440px] h-[440px] rounded-full bg-violet-600/15 blur-[100px]"
+              animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.35, 0.75, 0.35] }} transition={{ duration: 2.4, repeat: Infinity }} />
+            <motion.div initial={{ scale: 0.6, opacity: 0, rotate: -18 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 130, damping: 12 }}
+              className="relative w-24 h-24 rounded-[28px] border border-violet-300/30 bg-gradient-to-br from-violet-500/30 to-cyan-400/10 shadow-[0_0_70px_rgba(139,92,246,0.3)] flex items-center justify-center text-violet-200">
+              <AudioWaveform className="w-12 h-12" />
+            </motion.div>
+            <motion.h1 initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }} className="relative mt-7 text-3xl font-bold tracking-[0.18em] text-white">ReAV-TSE</motion.h1>
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }} className="relative mt-2 text-xs tracking-[0.22em] uppercase text-violet-200/60">AI Audio · Visual Separation</motion.p>
+            <div className="relative flex items-center gap-1.5 mt-8 h-8">{Array.from({ length: 25 }).map((_, i) => <motion.span key={i} className="w-1 rounded-full bg-gradient-to-t from-violet-600 to-cyan-300" animate={{ height: [7, 12 + ((i * 13) % 23), 7], opacity: [0.35, 1, 0.35] }} transition={{ duration: 0.55 + (i % 5) * 0.12, repeat: Infinity, delay: i * 0.025 }} />)}</div>
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="relative mt-8 text-[10px] tracking-widest text-neutral-500">INITIALIZING OFFLINE AI ENGINE</motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     <div className="min-h-screen bg-background text-neutral-200 flex flex-col font-sans selection:bg-accent/30 selection:text-white">
       {/* Top Header Navigation */}
       <header className="sticky top-0 z-50 w-full glass-panel border-b border-surface-border">
@@ -231,9 +248,36 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="py-12"
             >
-              <UploadZone
-                onVideoSelected={handleVideoSelected}
-              />
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 mb-7">
+                <div className="grid grid-cols-2 gap-3 p-2 rounded-2xl glass-panel border border-surface-border">
+                  <button onClick={() => setMediaMode('video')} className={`rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm transition-all ${mediaMode === 'video' ? 'bg-accent text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>
+                    <Video className="w-4 h-4" /> {ac.video}
+                  </button>
+                  <button onClick={() => setMediaMode('audio')} className={`rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-sm transition-all ${mediaMode === 'audio' ? 'bg-accent text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}>
+                    <Headphones className="w-4 h-4" /> {ac.audio}
+                  </button>
+                </div>
+              </div>
+              {mediaMode === 'video' ? (
+                <UploadZone onVideoSelected={handleVideoSelected} />
+              ) : (
+                <section className="max-w-4xl mx-auto px-4 sm:px-6">
+                  <div className="glass-panel border border-surface-border rounded-3xl p-7 sm:p-10 text-center shadow-2xl">
+                    <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent"><AudioWaveform className="w-8 h-8" /></div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">{ac.audioTitle}</h1>
+                    <p className="text-sm text-neutral-400 max-w-xl mx-auto mb-7">{ac.audioDesc}</p>
+                    <label className="block border border-dashed border-accent/40 rounded-2xl p-6 cursor-pointer hover:bg-accent/5 transition-colors">
+                      <input type="file" accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg,.aac" className="sr-only" onChange={(e) => { setAudioFile(e.target.files?.[0] || null); setAudioOutputs([]); }} />
+                      <Headphones className="w-7 h-7 mx-auto mb-2 text-accent" />
+                      <span className="text-sm text-white">{audioFile ? audioFile.name : ac.choose}</span>
+                      <span className="block text-xs text-neutral-500 mt-2">WAV · MP3 · M4A · FLAC · OGG · AAC</span>
+                    </label>
+                    <button disabled={!audioFile || audioBusy} onClick={handleAudioSeparation} className="mt-5 px-7 py-3 rounded-xl bg-accent text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all">{audioBusy ? ac.busy : ac.run}</button>
+                    {audioBusy && <motion.div className="h-1 rounded-full bg-accent mt-6" initial={{ width: '5%' }} animate={{ width: '95%' }} transition={{ duration: 25, ease: 'linear' }} />}
+                    {audioOutputs.length > 0 && <div className="mt-8 text-left border-t border-surface-border pt-6"><h2 className="text-white font-semibold mb-4">{ac.output}</h2><div className="grid sm:grid-cols-2 gap-3">{audioOutputs.map((item) => <a key={item.speaker} href={apiUrl(item.downloadUrl)} className="rounded-xl border border-surface-border bg-surface-elevated p-4 text-sm text-white hover:border-accent/60">Source {item.speaker} · Download WAV</a>)}</div><p className="text-xs text-amber-300/80 mt-4 leading-relaxed">{audioNotice || ac.note}</p></div>}
+                  </div>
+                </section>
+              )}
             </motion.div>
           )}
 
