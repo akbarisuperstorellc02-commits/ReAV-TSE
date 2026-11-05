@@ -1,5 +1,5 @@
 {
-  "name": "reav-tse-frontend",
+  "name": "reav-tse-bh-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -30,8 +30,8 @@
   },
   "main": "desktop/main.cjs",
   "build": {
-    "appId": "com.reavtse.desktop",
-    "productName": "ReAV-TSE",
+    "appId": "com.reavtsebh.desktop",
+    "productName": "ReAV-TSE-BH",
     "directories": {
       "output": "../release"
     },
@@ -67,7 +67,7 @@
           ]
         }
       ],
-      "artifactName": "ReAV-TSE-Setup-${version}-Windows-x64.${ext}"
+      "artifactName": "ReAV-TSE-BH-Setup-${version}-Windows-x64.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -75,7 +75,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "ReAV-TSE"
+      "shortcutName": "ReAV-TSE-BH"
     },
     "compression": "store"
   }
