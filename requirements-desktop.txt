@@ -11,3 +11,5 @@ imageio-ffmpeg
 pyinstaller
 speechbrain==1.0.3
 hyperpyyaml==1.2.2
+# HyperPyYAML 1.2.2 uses the ruamel.yaml Loader API removed in 0.18+.
+ruamel.yaml==0.17.40
