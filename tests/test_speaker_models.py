@@ -14,6 +14,51 @@ class SpeakerModelRegistryTests(unittest.TestCase):
         self.assertEqual(MODEL_CATALOG["spex_plus"]["role"], "audio_only_target_extraction")
         self.assertEqual(MODEL_CATALOG["nvidia_nemotron_diarization"]["role"], "secondary_diarization")
 
+    def test_overlap_detection_finds_cross_speaker_intersections(self):
+        from speaker_models import find_speaker_overlaps
+
+        segments = [
+            {"speaker": "S1", "start": 0.0, "end": 2.0},
+            {"speaker": "S2", "start": 1.0, "end": 3.0},
+            {"speaker": "S3", "start": 1.5, "end": 2.5},
+        ]
+        self.assertEqual(
+            find_speaker_overlaps(segments),
+            [
+                {"start": 1.0, "end": 2.0, "speakers": ["S1", "S2"]},
+                {"start": 1.5, "end": 2.0, "speakers": ["S1", "S3"]},
+                {"start": 1.5, "end": 2.5, "speakers": ["S2", "S3"]},
+            ],
+        )
+
+    def test_overlap_detection_excludes_same_speaker_and_touching_edges(self):
+        from speaker_models import find_speaker_overlaps
+
+        segments = [
+            {"speaker": "S1", "start": 0.0, "end": 2.0},
+            {"speaker": "S1", "start": 1.0, "end": 3.0},
+            {"speaker": "S2", "start": 3.0, "end": 4.0},
+        ]
+        self.assertEqual(find_speaker_overlaps(segments), [])
+
+    def test_overlap_detection_sorts_unsorted_input_deterministically(self):
+        from speaker_models import find_speaker_overlaps
+
+        segments = [
+            {"speaker": "B", "start": 2.0, "end": 4.0},
+            {"speaker": "A", "start": 0.0, "end": 3.0},
+        ]
+        self.assertEqual(
+            find_speaker_overlaps(segments),
+            [{"start": 2.0, "end": 3.0, "speakers": ["A", "B"]}],
+        )
+
+    def test_overlap_detection_rejects_invalid_times(self):
+        from speaker_models import find_speaker_overlaps
+
+        with self.assertRaises(ValueError):
+            find_speaker_overlaps([{"speaker": "S1", "start": 2.0, "end": 1.0}])
+
     def test_status_does_not_download_models(self):
         with patch.dict(os.environ, {}, clear=True):
             status = model_status()
