@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/four-language-desktop
+      - fix/audio-path-and-safe-separation
 
 concurrency:
   group: windows-desktop-${{ github.ref }}
