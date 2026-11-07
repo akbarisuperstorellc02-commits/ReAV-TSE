@@ -144,10 +144,106 @@ jobs:
       - name: Build Windows installer
         working-directory: frontend
         run: npm run dist
-      - name: Upload installer
+      - name: Split installer into verified download parts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = (Resolve-Path 'frontend/release/ReAV-TSE-BH-Setup-1.0.0-Windows-x64.exe').Path
+          $partsDir = Join-Path $env:RUNNER_TEMP 'reav-installer-parts'
+          New-Item -ItemType Directory -Force $partsDir | Out-Null
+          $partBytes = 250MB
+          $buffer = New-Object byte[] (4MB)
+          $input = [System.IO.File]::OpenRead($installer)
+          $partNumber = 1
+          $partPaths = @()
+          try {
+            while ($input.Position -lt $input.Length) {
+              $partPath = Join-Path $partsDir ('ReAV-TSE-Setup.part{0:D2}' -f $partNumber)
+              $output = [System.IO.File]::Create($partPath)
+              $written = 0L
+              try {
+                while ($written -lt $partBytes -and $input.Position -lt $input.Length) {
+                  $wanted = [int][Math]::Min($buffer.Length, [Math]::Min($partBytes - $written, $input.Length - $input.Position))
+                  $read = $input.Read($buffer, 0, $wanted)
+                  if ($read -le 0) { break }
+                  $output.Write($buffer, 0, $read)
+                  $written += $read
+                }
+              } finally { $output.Dispose() }
+              $partPaths += $partPath
+              $partNumber++
+            }
+          } finally { $input.Dispose() }
+
+          $originalHash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          $joined = Join-Path $partsDir 'reassembled-check.exe'
+          $joinedStream = [System.IO.File]::Create($joined)
+          try {
+            foreach ($part in $partPaths) {
+              $partStream = [System.IO.File]::OpenRead($part)
+              try { $partStream.CopyTo($joinedStream) } finally { $partStream.Dispose() }
+            }
+          } finally { $joinedStream.Dispose() }
+          $joinedHash = (Get-FileHash $joined -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($joinedHash -ne $originalHash) { throw "Reassembly verification failed: $joinedHash != $originalHash" }
+          Remove-Item $joined -Force
+
+          $manifest = @(
+            "Installer: ReAV-TSE-BH-Setup-1.0.0-Windows-x64.exe"
+            "Original size bytes: $((Get-Item $installer).Length)"
+            "Original SHA256: $originalHash"
+            "Part size maximum bytes: $partBytes"
+            "Part count: $($partPaths.Count)"
+            ""
+            "SHA256  File"
+          )
+          foreach ($part in $partPaths) {
+            $hash = (Get-FileHash $part -Algorithm SHA256).Hash.ToLowerInvariant()
+            $manifest += "$hash  $(Split-Path $part -Leaf)"
+          }
+          $manifest | Set-Content (Join-Path $partsDir 'SHA256-MANIFEST.txt') -Encoding ASCII
+          Write-Host "SPLIT_AND_REASSEMBLY_VERIFIED parts=$($partPaths.Count) original_sha256=$originalHash"
+          Get-ChildItem $partsDir | Where-Object { $_.Name -ne 'reassembled-check.exe' } | Select-Object Name,Length
+
+      - name: Upload installer part 1
         uses: actions/upload-artifact@v4
         with:
-          name: ReAV-TSE-Windows-Installer
-          path: release/*.exe
+          name: ReAV-TSE-Installer-Part-1
+          path: ${{ runner.temp }}/reav-installer-parts/ReAV-TSE-Setup.part01
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload installer part 2
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Installer-Part-2
+          path: ${{ runner.temp }}/reav-installer-parts/ReAV-TSE-Setup.part02
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload installer part 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Installer-Part-3
+          path: ${{ runner.temp }}/reav-installer-parts/ReAV-TSE-Setup.part03
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload installer part 4
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Installer-Part-4
+          path: ${{ runner.temp }}/reav-installer-parts/ReAV-TSE-Setup.part04
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload installer part 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Installer-Part-5
+          path: ${{ runner.temp }}/reav-installer-parts/ReAV-TSE-Setup.part05
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload installer SHA256 manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReAV-TSE-Installer-Checksums
+          path: ${{ runner.temp }}/reav-installer-parts/SHA256-MANIFEST.txt
           if-no-files-found: error
           retention-days: 14
