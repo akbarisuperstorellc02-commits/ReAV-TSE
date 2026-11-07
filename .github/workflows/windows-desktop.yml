@@ -148,7 +148,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $installer = (Resolve-Path 'frontend/release/ReAV-TSE-BH-Setup-1.0.0-Windows-x64.exe').Path
+          $installer = (Resolve-Path 'release/ReAV-TSE-BH-Setup-1.0.0-Windows-x64.exe').Path
           $partsDir = Join-Path $env:RUNNER_TEMP 'reav-installer-parts'
           New-Item -ItemType Directory -Force $partsDir | Out-Null
           $partBytes = 250MB
