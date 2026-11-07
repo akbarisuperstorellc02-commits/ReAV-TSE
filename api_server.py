@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from job_pipeline import create_job, analyze_video_job, extract_job_speaker, JOBS_DIR
-from audio_output import compact_audio, detect_speech_intervals
+from audio_output import compact_audio, detect_speech_intervals, normalize_audio_for_separator
 
 app = FastAPI(title="ReAV-TSE Multi-Job API", description="Dynamic Audio-Visual Target Speaker Extraction Backend")
 
@@ -25,7 +25,11 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
-DATA_DIR = Path(os.environ.get('REAV_DATA_DIR', str(Path.home() / 'ReAV-TSE')))
+# Resolve the user-data directory once, so Windows drive-relative paths
+# (for example, "C:Users\\...") can never leak into FFmpeg arguments.
+_raw_data_dir = os.environ.get("REAV_DATA_DIR", "").strip()
+DATA_DIR = Path(_raw_data_dir).expanduser() if _raw_data_dir else (Path.home() / "ReAV-TSE")
+DATA_DIR = DATA_DIR.resolve()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
@@ -334,9 +338,12 @@ def separate_audio(req: AnalyzeRequest):
         import soundfile as sf
         normalized = job_dir / "normalized_8k.wav"
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
-        import subprocess
-        subprocess.run([ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
-                        "-vn", "-ac", "1", "-ar", "8000", str(normalized)], check=True)
+        normalization = normalize_audio_for_separator(source, normalized, ffmpeg)
+        print(
+            "[Audio Separation] Normalized source: "
+            f"{normalization['sample_rate']} Hz, {normalization['channels']} channel(s), "
+            f"{normalization['duration_sec']} sec, {normalization['path']}"
+        )
         separator = _get_audio_separator()
         estimates = separator.separate_file(path=str(normalized))
         stems = []

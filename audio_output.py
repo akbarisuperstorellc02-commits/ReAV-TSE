@@ -182,6 +182,54 @@ def restore_estimate_scale(
         return np.zeros_like(source, dtype=np.float32)
     return (est * source_peak).astype(np.float32, copy=False)
 
+
+def normalize_audio_for_separator(source: Path, normalized: Path, ffmpeg: str) -> dict:
+    """Create and validate a mono 8 kHz WAV for the legacy SepFormer checkpoint.
+
+    Resolve Windows paths before invoking FFmpeg and publish the output only
+    after a complete WAV has been written and validated.
+    """
+    import subprocess
+
+    source = Path(source).expanduser().resolve()
+    normalized = Path(normalized).expanduser().resolve()
+    if not source.is_file() or source.stat().st_size == 0:
+        raise FileNotFoundError(f"Uploaded source audio is missing or empty: {source}")
+    normalized.parent.mkdir(parents=True, exist_ok=True)
+    temporary = normalized.with_name(normalized.stem + ".partial" + normalized.suffix)
+    try:
+        temporary.unlink(missing_ok=True)
+        command = [
+            str(ffmpeg), "-hide_banner", "-loglevel", "error", "-y",
+            "-i", str(source), "-vn", "-ac", "1", "-ar", "8000",
+            "-c:a", "pcm_s16le", str(temporary),
+        ]
+        result = subprocess.run(
+            command, check=False, capture_output=True, text=True, timeout=900
+        )
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "FFmpeg returned a non-zero exit code").strip()
+            raise RuntimeError(f"Audio normalization failed (exit {result.returncode}): {detail}")
+        if not temporary.is_file() or temporary.stat().st_size <= 44:
+            raise RuntimeError("FFmpeg did not create a valid normalized WAV file.")
+        info = sf.info(str(temporary))
+        if info.samplerate != 8000 or info.channels != 1 or info.frames <= 0:
+            raise RuntimeError(
+                "Normalized audio has invalid format: "
+                f"sample_rate={info.samplerate}, channels={info.channels}, frames={info.frames}."
+            )
+        temporary.replace(normalized)
+        return {
+            "path": str(normalized),
+            "sample_rate": info.samplerate,
+            "channels": info.channels,
+            "frames": info.frames,
+            "duration_sec": round(info.duration, 3),
+        }
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def write_compacted_wav(source_audio: Path, output_wav: Path) -> dict:
     audio, sr = sf.read(str(source_audio), dtype="float32", always_2d=True)
     compacted, intervals = compact_audio(audio, sr)

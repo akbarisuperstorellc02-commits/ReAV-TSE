@@ -1,6 +1,47 @@
 import unittest
+import tempfile
+from pathlib import Path
 import numpy as np
-from audio_output import compact_audio, detect_speech_intervals, normalize_intervals, restore_estimate_scale
+import soundfile as sf
+from audio_output import (
+    compact_audio, detect_speech_intervals, normalize_intervals,
+    restore_estimate_scale, normalize_audio_for_separator,
+)
+
+
+
+class AudioNormalizationTests(unittest.TestCase):
+    def test_normalizes_audio_to_valid_mono_8khz_wav_with_spaces_in_path(self):
+        import imageio_ffmpeg
+
+        with tempfile.TemporaryDirectory(prefix="ReAV audio path ") as temp:
+            root = Path(temp)
+            source = root / "uploaded source.wav"
+            normalized = root / "job folder" / "normalized_8k.wav"
+            signal = np.sin(np.linspace(0, 40 * np.pi, 16000, dtype=np.float32)) * 0.2
+            sf.write(str(source), signal, 16000)
+
+            result = normalize_audio_for_separator(
+                source, normalized, imageio_ffmpeg.get_ffmpeg_exe()
+            )
+
+            self.assertTrue(normalized.is_file())
+            self.assertEqual(result["sample_rate"], 8000)
+            self.assertEqual(result["channels"], 1)
+            self.assertEqual(Path(result["path"]), normalized.resolve())
+            info = sf.info(str(normalized))
+            self.assertEqual(info.samplerate, 8000)
+            self.assertEqual(info.channels, 1)
+            self.assertGreater(info.frames, 0)
+
+    def test_missing_source_fails_before_running_ffmpeg(self):
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(FileNotFoundError, "missing or empty"):
+                normalize_audio_for_separator(
+                    Path(temp) / "missing.wav",
+                    Path(temp) / "normalized_8k.wav",
+                    "ffmpeg",
+                )
 
 
 class CompactOutputTests(unittest.TestCase):
