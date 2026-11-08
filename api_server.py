@@ -25,11 +25,28 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
-# Resolve the user-data directory once, so Windows drive-relative paths
-# (for example, "C:Users\\...") can never leak into FFmpeg arguments.
-_raw_data_dir = os.environ.get("REAV_DATA_DIR", "").strip()
-DATA_DIR = Path(_raw_data_dir).expanduser() if _raw_data_dir else (Path.home() / "ReAV-TSE")
-DATA_DIR = DATA_DIR.resolve()
+
+
+def _resolve_data_directory(raw_value: str | None) -> Path:
+    """Return a genuinely absolute data path; repair the known C:Users typo.
+
+    Windows treats ``C:folder`` as drive-relative, not as ``C:\\folder``.
+    That distinction caused SpeechBrain/torchaudio to fail opening the
+    normalized WAV on affected packaged installs.
+    """
+    raw = (raw_value or "").strip()
+    if not raw:
+        candidate = Path.home() / "ReAV-TSE"
+    else:
+        if os.name == "nt":
+            raw = re.sub(r"^([A-Za-z]):(?=Users[\\\\/])", r"\\1:\\\\", raw, flags=re.IGNORECASE)
+        candidate = Path(raw).expanduser()
+    if os.name == "nt" and not candidate.is_absolute():
+        raise RuntimeError(f"REAV_DATA_DIR must be an absolute Windows path; received: {candidate}")
+    return candidate.resolve()
+
+
+DATA_DIR = _resolve_data_directory(os.environ.get("REAV_DATA_DIR"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
