@@ -39,7 +39,7 @@ def _resolve_data_directory(raw_value: str | None) -> Path:
         candidate = Path.home() / "ReAV-TSE"
     else:
         if os.name == "nt":
-            raw = re.sub(r"^([A-Za-z]):(?=Users[\\\\/])", r"\\1:\\\\", raw, flags=re.IGNORECASE)
+            raw = re.sub(r"^([A-Za-z]):(?=Users[\\\\/])", r"\1:\\", raw, flags=re.IGNORECASE)
         candidate = Path(raw).expanduser()
     if os.name == "nt" and not candidate.is_absolute():
         raise RuntimeError(f"REAV_DATA_DIR must be an absolute Windows path; received: {candidate}")
