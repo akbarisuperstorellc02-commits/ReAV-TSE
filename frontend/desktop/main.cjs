@@ -8,7 +8,7 @@ const http = require('http');
 function getSafeUserDataPath() {
   let value = app.getPath('userData');
   if (process.platform === 'win32') {
-    value = value.replace(/^([A-Za-z]):(?=Users[\\\\/])/i, '$1:\\\\');
+    value = value.replace(/^([A-Za-z]):(?=Users[\\/])/i, '$1:' + '\\');
     if (!path.win32.isAbsolute(value)) {
       throw new Error(`Electron returned a non-absolute userData path: ${value}`);
     }
