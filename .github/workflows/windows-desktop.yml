@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows:
@@ -144,6 +144,26 @@ jobs:
       - name: Build Windows installer
         working-directory: frontend
         run: npm run dist
+      - name: Validate NSIS installer archive and silent installation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = (Resolve-Path 'release/ReAV-TSE-BH-Setup-1.0.0-Windows-x64.exe').Path
+          $sevenZip = (Get-Command 7z.exe -ErrorAction SilentlyContinue).Source
+          if (-not $sevenZip -and (Test-Path 'C:\Program Files\7-Zip\7z.exe')) { $sevenZip = 'C:\Program Files\7-Zip\7z.exe' }
+          if (-not $sevenZip) { throw '7-Zip is required to validate the NSIS installer archive.' }
+          & $sevenZip t $installer
+          if ($LASTEXITCODE -ne 0) { throw "NSIS installer archive integrity test failed with exit code $LASTEXITCODE." }
+
+          $installDir = Join-Path $env:RUNNER_TEMP 'reav-installer-validation'
+          if (Test-Path $installDir) { Remove-Item $installDir -Recurse -Force }
+          $install = Start-Process -FilePath $installer -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Silent installer returned exit code $($install.ExitCode)." }
+          $asar = Join-Path $installDir 'resources/app.asar'
+          if (-not (Test-Path $asar) -or (Get-Item $asar).Length -lt 1024) {
+            throw 'Silent installation did not produce a valid Electron app.asar.'
+          }
+          Write-Host "NSIS_ARCHIVE_TEST_AND_SILENT_INSTALL_OK installer_bytes=$((Get-Item $installer).Length) app_asar_bytes=$((Get-Item $asar).Length)"
       - name: Split installer into verified download parts
         shell: pwsh
         run: |
@@ -247,3 +267,13 @@ jobs:
           path: ${{ runner.temp }}/reav-installer-parts/SHA256-MANIFEST.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish direct-download installer parts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: reav-tse-installer-1.0.0-build-${{ github.run_number }}
+          name: ReAV-TSE-BH Installer 1.0.0 (Build ${{ github.run_number }})
+          prerelease: true
+          files: |
+            ${{ runner.temp }}/reav-installer-parts/ReAV-TSE-Setup.part*
+            ${{ runner.temp }}/reav-installer-parts/SHA256-MANIFEST.txt
