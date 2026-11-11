@@ -3,6 +3,20 @@ const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
 
+// Electron normally returns an absolute Windows userData path. Repair the
+// known drive-relative form (C:Users\\...) before passing it to Python.
+function getSafeUserDataPath() {
+  let value = app.getPath('userData');
+  if (process.platform === 'win32') {
+    value = value.replace(/^([A-Za-z]):(?=Users[\\/])/i, '$1:' + '\\');
+    if (!path.win32.isAbsolute(value)) {
+      throw new Error(`Electron returned a non-absolute userData path: ${value}`);
+    }
+    return path.win32.normalize(value);
+  }
+  return path.resolve(value);
+}
+
 const API_PORT = 8765;
 const API_BASE = `http://127.0.0.1:${API_PORT}`;
 let backend = null;
@@ -34,7 +48,7 @@ function startBackend() {
     env: {
       ...process.env,
       REAV_API_PORT: String(API_PORT),
-      REAV_DATA_DIR: path.join(app.getPath('userData'), 'data'),
+      REAV_DATA_DIR: path.join(getSafeUserDataPath(), 'data'),
       TORCH_HOME: path.join(process.resourcesPath, 'torch_cache'),
       REAV_AUDIO_MODEL_DIR: path.join(process.resourcesPath, 'audio_models', 'sepformer-wsj02mix')
     },

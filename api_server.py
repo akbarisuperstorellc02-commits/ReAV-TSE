@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
 from job_pipeline import create_job, analyze_video_job, extract_job_speaker, JOBS_DIR
-from audio_output import compact_audio, detect_speech_intervals
+from audio_output import compact_audio, detect_speech_intervals, normalize_audio_for_separator
 
 app = FastAPI(title="ReAV-TSE Multi-Job API", description="Dynamic Audio-Visual Target Speaker Extraction Backend")
 
@@ -25,7 +25,28 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
-DATA_DIR = Path(os.environ.get('REAV_DATA_DIR', str(Path.home() / 'ReAV-TSE')))
+
+
+def _resolve_data_directory(raw_value: str | None) -> Path:
+    """Return a genuinely absolute data path; repair the known C:Users typo.
+
+    Windows treats ``C:folder`` as drive-relative, not as ``C:\\folder``.
+    That distinction caused SpeechBrain/torchaudio to fail opening the
+    normalized WAV on affected packaged installs.
+    """
+    raw = (raw_value or "").strip()
+    if not raw:
+        candidate = Path.home() / "ReAV-TSE"
+    else:
+        if os.name == "nt":
+            raw = re.sub(r"^([A-Za-z]):(?=Users[\\\\/])", r"\1:\\", raw, flags=re.IGNORECASE)
+        candidate = Path(raw).expanduser()
+    if os.name == "nt" and not candidate.is_absolute():
+        raise RuntimeError(f"REAV_DATA_DIR must be an absolute Windows path; received: {candidate}")
+    return candidate.resolve()
+
+
+DATA_DIR = _resolve_data_directory(os.environ.get("REAV_DATA_DIR"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
@@ -334,9 +355,12 @@ def separate_audio(req: AnalyzeRequest):
         import soundfile as sf
         normalized = job_dir / "normalized_8k.wav"
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
-        import subprocess
-        subprocess.run([ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
-                        "-vn", "-ac", "1", "-ar", "8000", str(normalized)], check=True)
+        normalization = normalize_audio_for_separator(source, normalized, ffmpeg)
+        print(
+            "[Audio Separation] Normalized source: "
+            f"{normalization['sample_rate']} Hz, {normalization['channels']} channel(s), "
+            f"{normalization['duration_sec']} sec, {normalization['path']}"
+        )
         separator = _get_audio_separator()
         estimates = separator.separate_file(path=str(normalized))
         stems = []
